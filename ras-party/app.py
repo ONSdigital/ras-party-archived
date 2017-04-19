@@ -19,6 +19,9 @@ from sqlalchemy import exc
 from jose import JWTError
 from jwt import decode
 from json import JSONEncoder
+import phonenumbers
+from phonenumbers.phonenumberutil import NumberParseException
+from config import PartyService
 
 # Enable cross-origin requests
 app = Flask(__name__)
@@ -94,6 +97,47 @@ def validate_uri(uri, id_type):
         app.logger.warning("URI is malformed: {}. It should be: {}".format(uri[0:14], urn_ons_path))
         return False
 
+
+def validate_phone_number(telephone):
+
+    # A small helper function which helps you validate that a string is a valid phone number
+
+    if len(telephone) > 16:
+        return False
+    try:
+        print "Checking this is a valid GB Number"
+        input_number = phonenumbers.parse(telephone, "GB")  # Tell the parser we are looking for a GB number
+
+        if not (phonenumbers.is_possible_number(input_number)):
+            return False
+
+        if not (phonenumbers.is_valid_number(input_number)):
+            return False
+    except NumberParseException:
+        print " There is a number parse exception in the phonenumber field"
+        return False
+
+    return True
+
+
+def validate_status_code(status):
+
+    # A small helper function which validates a status code to ensure that it either
+    # [ ACTIVE | CREATED | ACTIVE | SUSPENDED ]
+
+    if status in PartyService.STATUS_CODES:
+        return True
+    else:
+        return False
+
+
+def validate_email_unique(email_address):
+    # A small helper function which checks the part service does not have an email in the syste that is unique
+
+    #TODO A sql look up to ensure that this is a unique email address in the database. For now we just return true.
+
+    return True
+
 def validate_scope(jwt_token, scope_type):
     """
     This function checks a jwt tokem for a required scope type.
@@ -125,82 +169,6 @@ def validate_scope(jwt_token, scope_type):
         app.logger.warning('JWT scope could not be validated.')
         return False
 
-
-@app.route('/partyservice', methods=['GET'])
-def collection():
-    """
-    This endpoint returns a filtered list of all the content fields for each collection
-    instrument in the database.
-
-    :return: Json Http Response
-    """
-
-    app.logger.info("party service hit")
-
-    # First check that we have a valid JWT token if we don't send a 400 error with authorisation failure
-    if request.headers.get('authorization'):
-        jwt_token = request.headers.get('authorization')
-        if not validate_scope(jwt_token, 'ci.read'):
-            res = Response(response="Invalid token/scope to access this Microservice Resource", status=400, mimetype="text/html")
-            return res
-    else:
-        res = Response(response="Valid token/scope is required to access this Microservice Resource", status=400, mimetype="text/html")
-        return res
-
-    try:
-        app.logger.debug("Making query to DB")
-        object_list = [rec.content for rec in PartyService.query.all()]
-
-    except exc.OperationalError:
-        app.logger.error("There has been an error in our DB. Excption is: {}".format(sys.exc_info()[0]))
-        res = Response(response="""Error in the Party Service DB, it looks like there
-                       is no data presently or the DB is not available.
-                       Please contact a member of ONS staff.""", status=500, mimetype="text/html")
-        return res
-
-    if not object_list:
-        app.logger.debug("object is empty")
-        res = Response(response="Party Service not found", status=404, mimetype="text/html")
-        return res
-
-    jobject_list = JSONEncoder().encode(object_list)
-    res = Response(response=jobject_list, status=200, mimetype="collection+json")
-    return res
-
-
-@app.route('/partyservice/file/<string:_id>', methods=['GET'])
-def get_binary(_id):
-
-    app.logger.info("partyservice/file file name is: {}".format(_id))
-
-    # First check that we have a valid JWT token if we don't send a 400 error with authorisation failure
-    if request.headers.get('authorization'):
-        jwt_token = request.headers.get('authorization')
-        if not validate_scope(jwt_token, 'ci.read'):
-            res = Response(response="Invalid token/scope to access this Microservice Resource", status=400, mimetype="text/html")
-            return res
-    else:
-        res = Response(response="Valid token/scope is required to access this Microservice Resource", status=400, mimetype="text/html")
-        return res
-
-    if not validate_uri(_id, 'ci'):
-        res = Response(response="Invalid ID supplied", status=400, mimetype="text/html")
-        return res
-
-    try:
-        # now filters on the unique indexed database column "urn"
-        # should now only ever get 0 or 1 record here
-        new_object = db.session.query(PartyService).filter(PartyService.urn == _id)[0]
-    except:
-        app.logger.error("There has been an error in our DB. Excption is: {}".format(sys.exc_info()[0]))
-        res = Response(response="Invalid ID supplied", status=400, mimetype="text/html")
-        return res
-
-    if new_object.file_path is None:
-        res = Response(response="No file present", status=404, mimetype="text/html")
-        return res
-
-    return send_from_directory('uploads', new_object.file_path)
 
 
 # curl -X GET  http://localhost:5052/partyservice/?classifier={"LEGAL_STATUS":"A","INDUSTRY":"B"}
@@ -411,15 +379,25 @@ def add_binary(_id):
     return response, 201
 
 
-@app.route('/partyservice/', methods=['POST'])
+@app.route('/respondents/', methods=['POST'])
 def create():
     """
-    This endpoint creates a Party Service record, from the POST data
+    This endpoint creates a respondent record, from the POST data.
+    It takes in a parameter list for a user as:
+    :param
+        emailAddress
+        firstName
+        lastName
+        telephone
+        status [ ACTIVE | CREATED | ACTIVE | SUSPENDED ]
 
-    :return: Http response
+    :return: Http response 200
+        id  urn:ons.gov.uk:id:respondent:001.234.56789
+
+    The email must be unique for this user.
     """
 
-    app.logger.info("partyservice/ create")
+    app.logger.info("respondents/ create user")
 
     # First check that we have a valid JWT token if we don't send a 400 error with authorisation failure
     if request.headers.get('authorization'):
@@ -431,164 +409,61 @@ def create():
         res = Response(response="Valid token/scope is required to access this Microservice Resource", status=400, mimetype="text/html")
         return res
 
-    collection_instruments = []
+    party_respondent = []
 
     json = request.json
     if json:
         response = make_response("")
 
-        collection_instruments.append(request.json)
+        party_respondent.append(request.json)
         response.headers["location"] = "/partyservice/" + str(json["id"])
 
+        # Check that we have all the correct attributes in our json object.
         try:
-            json["id"]
-            json["surveyId"]
-            json["ciType"]
-            print json["id"]
+            json["emailAddress"]
+            json["firstName"]
+            json["lastName"]
+            json["telephone"]
+            json["status"]
+
         except KeyError:
             app.logger.warning("""Party Service POST did not contain correct mandatory
                                parameters in it's JSON payload: {}""".format(str(json)))
             res = Response(response="invalid input, object invalid", status=404, mimetype="text/html")
             return res
 
-        if not validate_uri(json["id"], 'ci'):
-            app.logger.warning("""Party Service POST did not contain a valid URI
-                               in the ID field. We receieved: {}""".format(json['id']))
-            res = Response(response="invalid input, object invalid", status=404, mimetype="text/html")
+        if not validate_email_unique(json["emailAddress"]):
+            app.logger.warning("""Party Service POST did not contain a unique email
+                               in the emailAddress field. We received: {}""".format(json['emailAddress']))
+            res = Response(response="duplicate user ID, object invalid", status=404, mimetype="text/html")
             return res
 
-        urn = json["id"]
-        survey_urn = json["surveyId"]
-
-        if not validate_uri(urn, 'ci'):
-            res = Response(response="Invalid ID supplied", status=400, mimetype="text/html")
+        if not validate_status_code(json["status"]):
+            app.logger.warning("""Party Service POST did not contain a valid status code in the status field. We
+                               received: {}""".format(json['status']))
+            res = Response(response="invalid status code, object invalid", status=404, mimetype="text/html")
             return res
 
-        if not validate_uri(survey_urn, 'survey'):
-            res = Response(response="Invalid Survey ID supplied", status=400, mimetype="text/html")
+        if not validate_phone_number(json["telephone"]):
+            app.logger.warning("""Party Service POST did not contain a valid UK phone number in the telephon field. We
+                               received: {}""".format(json['telephone']))
+            res = Response(response="invalid phone number, object invalid", status=404, mimetype="text/html")
             return res
 
-        new_object = PartyService(urn=urn,
-                                          survey_urn=survey_urn,
-                                          content=json,
-                                          file_uuid=None,
-                                          file_path=None)
+        #TODO Create a DB entry to save our uniquie user
 
-        db.session.add(new_object)
-        db.session.commit()
-
-        collection_path = response.headers["location"] = "/partyservice/" + str(new_object.id)
-
+        collection_path = response.headers["location"] = "/respondents/" + str(new_object.id)
         etag = hashlib.sha1(collection_path).hexdigest()
-
         response.set_etag(etag)
 
-        response.headers["location"] = "/partyservice/" + str(new_object.id)
+        response.headers["id"] = "/respondents/urn:ons.gov.uk:id:respondent:001.234.56789"
         return response, 201
 
     return jsonify({"message": "Please provide a valid Json object.",
                     "hint": "you may need to pass a content-type: application/json header"}), 400
 
 
-@app.route('/partyservice/id/<string:_id>', methods=['GET'])
-def get_id(_id):
-    """
-    Locate a Party Service by Party Service ID/URN.
-    This method is intended for locating Party Services by a non-human-readable 'id'
-    as opposed to by human-readable reference.
 
-    :param _id: String
-    :return: Http response
-    """
-
-    app.logger.info('get_id with value: {} '.format(_id))
-
-    # First check that we have a valid JWT token if we don't send a 400 error with authorisation failure
-    if request.headers.get('authorization'):
-        jwt_token = request.headers.get('authorization')
-        if not validate_scope(jwt_token, 'ci.read'):
-            res = Response(response="Invalid token/scope to access this Microservice Resource", status=400, mimetype="text/html")
-            return res
-    else:
-        res = Response(response="Valid token/scope is required to access this Microservice Resource", status=400, mimetype="text/html")
-        return res
-
-    if not validate_uri(_id, 'ci'):
-        res = Response(response="Invalid ID supplied", status=400, mimetype="text/html")
-        return res
-
-    try:
-        app.logger.debug('Querying DB')
-        # now filters on the unique indexed database column "urn"
-        object_list = [rec.content for rec in PartyService.query.filter(PartyService.urn == _id)]
-
-    except exc.OperationalError:
-        app.logger.error("There has been an error in our DB. Exception is: {}".format(sys.exc_info()[0]))
-        res = Response(response="""Error in the Party Service DB, it looks like there is no data presently,
-                                   or the DB is not available. Please contact a member of ONS staff.""",
-                       status=500, mimetype="text/html")
-        return res
-
-    if not object_list:
-        app.logger.debug("object is empty")
-        res = Response(response="Party Service not found", status=404, mimetype="text/html")
-        return res
-
-    for key in object_list:
-        app.logger.debug("The id is: {}".format(key['id']))
-
-        if not validate_uri(key['id'], 'ci'):
-            res = Response(response="Invalid URI", status=400, mimetype="text/html")
-            return res
-
-    jobject_list = JSONEncoder().encode(object_list)
-    res = Response(response=jobject_list, status=200, mimetype="collection+json")
-    return res
-
-
-@app.route('/partyservice/reference/<string:ci_ref>', methods=['GET'])
-def get_ref(ci_ref):
-    """
-    Locate a Party Service by reference.
-    This method is intended for locating Party Services by a human-readable 'reference'
-    as opposed to by database Id.
-
-    :param ci_ref: String
-    :return: Http Response
-    """
-
-    app.logger.info("get_ref with ci_ref: {}".format(ci_ref))
-
-    # First check that we have a valid JWT token if we don't send a 400 error with authorisation failure
-    if request.headers.get('authorization'):
-        jwt_token = request.headers.get('authorization')
-        if not validate_scope(jwt_token, 'ci.read'):
-            res = Response(response="Invalid token/scope to access this Microservice Resource", status=400, mimetype="text/html")
-            return res
-    else:
-        res = Response(response="Valid token/scope is required to access this Microservice Resource", status=400, mimetype="text/html")
-        return res
-
-    try:
-        app.logger.debug("Querying DB")
-        object_list = [rec.content for rec in PartyService.query.all() if rec.content['reference'] == ci_ref]
-
-    except exc.OperationalError:
-        app.logger.error("There has been an error in our DB. Exception is: {}".format(sys.exc_info()[0]))
-        res = Response(response="""Error in the Party Service DB, it looks like there is no data
-                                presently or the DB is not available.
-                                Please contact a member of ONS staff.""",
-                       status=500, mimetype="text/html")
-        return res
-
-    if not object_list:
-        app.logger.debug("object is empty in function get_ref")
-        res = Response(response="Party Service not found", status=404, mimetype="text/html")
-        return res
-
-    jobject_list = JSONEncoder().encode(object_list)
-    res = Response(response=jobject_list, status=200, mimetype="collection+json")
-    return res
 
 
 # example command to search on just a survey urn:
@@ -667,4 +542,4 @@ if __name__ == '__main__':
     db.init_app(app)
 
     # Run
-    app.run(port=5052, debug=False)
+    app.run(port=5062, debug=False)

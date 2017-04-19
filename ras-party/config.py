@@ -56,6 +56,15 @@ class TestingConfig(Config):
     TESTING = True
 
 
+class PartyService(Config):
+    """
+    This class is used to configure parameters that may be used in our microservice.
+    This is temporary until an admin config feature is added to allow manual config of the microservice
+    """
+
+    STATUS_CODES = ['ACTIVE', 'CREATED', 'ACTIVE', 'SUSPENDED']         # used in registering a new user
+
+
 class OAuthConfig(Config):
     """
     This class is used to configure OAuth2 parameters for the microservice.
@@ -73,3 +82,12 @@ class OAuthConfig(Config):
 
     AUTHORIZATION_ENDPOINT = "https://www.facebook.com/dialog/oauth"  # Facebook Auth endpoint
     TOKEN_ENDPOINT = "https://graph.facebook.com/oauth/access_token"  # Facebook token endpoint
+
+    ONS_OAUTH_PROTOCOL = "http://"
+    ONS_OAUTH_SERVER = "localhost:8000"
+    RAS_FRONTSTAGE_CLIENT_ID = "onc@onc.gov"
+    RAS_FRONTSTAGE_CLIENT_SECRET = "password"
+    ONS_AUTHORIZATION_ENDPOINT = "/web/authorize/"
+    ONS_TOKEN_ENDPOINT = "/api/v1/tokens/"
+    ONS_ADMIN_ENDPOINT = '/api/account/create'
+

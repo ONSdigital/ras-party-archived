@@ -10,23 +10,26 @@ from sqlalchemy.dialects.postgresql import TEXT, JSON, UUID
 from app import db
 
 
-class PartyService(db.Model):
+class Respondent(db.Model):
     """
-    The collection instrument model
+    The respondent model
     """
-    __tablename__ = 'ras_party_service'
+    __tablename__ = 'ras_respondents'
     id = db.Column(db.Integer, primary_key=True)
-    urn = db.Column(TEXT)
-    survey_urn = db.Column(TEXT)
-    content = db.Column(JSON)
-    file_uuid = db.Column(UUID)
-    file_path = db.Column(TEXT)
+    party_id = db.Column(TEXT)
+    status = db.Column(TEXT)
+    email_address = db.Column(TEXT)
+    first_name = db.Column(TEXT)
+    last_name = db.Column(TEXT)
+    telephone = db.Column(TEXT)
     created_on = db.Column(DateTime, default=datetime.datetime.utcnow)
 
-    def __init__(self, urn, survey_urn, content, id=None, file_uuid=None, file_path=None):
+
+    def __init__(self, party_id, status, email_address, first_name, last_name, telephone, id=None):
         self.id = id
-        self.urn = urn
-        self.survey_urn = survey_urn
-        self.content = content
-        self.file_uuid = file_uuid
-        self.file_path = file_path
+        self.party_id = party_id
+        self.status = status
+        self.email_address = email_address
+        self.first_name = first_name
+        self.last_name = last_name
+        self.telephone = telephone

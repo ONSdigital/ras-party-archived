@@ -22,7 +22,7 @@ class Config(object):
     TESTING = False
     CSRF_ENABLED = True
     SECRET_KEY = 'this-really-needs-to-be-changed'
-    dbname = "ras_collection_instrument"
+    dbname = "ras_party"
     SQLALCHEMY_DATABASE_URI = "postgresql://" + dbname + ":password@localhost:5431/postgres"
 
 
@@ -62,7 +62,7 @@ class PartyService(Config):
     This is temporary until an admin config feature is added to allow manual config of the microservice
     """
 
-    STATUS_CODES = ['ACTIVE', 'CREATED', 'ACTIVE', 'SUSPENDED']         # used in registering a new user
+    STATUS_CODES = ['ACTIVE', 'CREATED', 'SUSPENDED']         # used in registering a new user
 
 
 class OAuthConfig(Config):

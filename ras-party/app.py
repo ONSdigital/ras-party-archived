@@ -380,7 +380,7 @@ def add_binary(_id):
 
 
 @app.route('/respondents/', methods=['POST'])
-def create():
+def create_respondent():
     """
     This endpoint creates a respondent record, from the POST data.
     It takes in a parameter list for a user as:
@@ -402,7 +402,7 @@ def create():
     # First check that we have a valid JWT token if we don't send a 400 error with authorisation failure
     if request.headers.get('authorization'):
         jwt_token = request.headers.get('authorization')
-        if not validate_scope(jwt_token, 'ci.write'):
+        if not validate_scope(jwt_token, 'ps.write'):
             res = Response(response="Invalid token/scope to access this Microservice Resource", status=400, mimetype="text/html")
             return res
     else:

@@ -542,4 +542,4 @@ if __name__ == '__main__':
     db.init_app(app)
 
     # Run
-    app.run(port=5062, debug=False)
+    app.run(host='0.0.0.0', port=5062, debug=False)

@@ -559,4 +559,5 @@ if __name__ == '__main__':
     db.init_app(app)
 
     # Run
-    app.run(host='0.0.0.0', port=5062, debug=False)
+    PORT = int(os.environ.get('PORT', 5062))
+    app.run(host='0.0.0.0', port=PORT, debug=False)

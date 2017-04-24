@@ -150,16 +150,29 @@ def validate_scope(jwt_token, scope_type):
     app.logger.info("validate_scope jwt_token: {}, scope_type: {}".format(jwt_token, scope_type))
 
     # Make sure we can decrypt the token and it makes sense
+    return_val= False
     try:
         decrypted_jwt_token = decode(jwt_token)
-        if decrypted_jwt_token['user_scopes']:
-            for user_scope_list in decrypted_jwt_token['user_scopes']:
+        if decrypted_jwt_token['scope']:
+            for user_scope_list in decrypted_jwt_token['scope']:
                 if user_scope_list == scope_type:
                     app.logger.debug('Valid JWT scope.')
-                    return True
+                    return_val=True
 
-        app.logger.warning('Invalid JWT scope.')
-        return False
+        if not return_val:
+            app.logger.warning('Invalid JWT scope.')
+            return False
+
+        if decrypted_jwt_token['expires_at']:
+            # We have a time stamp so check this token has not expired
+            #TODO Add UTC Time stamp validation
+            app.logger.info('Token: {} has a UTC time stamp of: {}'.format(decrypted_jwt_token['access_token'],decrypted_jwt_token['expires_at']))
+        else:
+            # We don't have a time stamp
+            app.logger.warning('Token has expired for token Value: {}'.format(decrypted_jwt_token['access_token']))
+            return False
+
+        return return_val
 
     except JWTError:
         app.logger.warning('JWT scope could not be validated.')
@@ -402,7 +415,7 @@ def create_respondent():
     # First check that we have a valid JWT token if we don't send a 400 error with authorisation failure
     if request.headers.get('authorization'):
         jwt_token = request.headers.get('authorization')
-        if not validate_scope(jwt_token, 'ps.write'):
+        if not validate_scope(jwt_token, 'foo'):
             res = Response(response="Invalid token/scope to access this Microservice Resource", status=400, mimetype="text/html")
             return res
     else:
@@ -416,7 +429,7 @@ def create_respondent():
         response = make_response("")
 
         party_respondent.append(request.json)
-        response.headers["location"] = "/partyservice/" + str(json["id"])
+        response.headers["location"] = "/respondents/"
 
         # Check that we have all the correct attributes in our json object.
         try:
@@ -438,12 +451,6 @@ def create_respondent():
         #     res = Response(response="duplicate user ID, object invalid", status=404, mimetype="text/html")
         #     return res
 
-        if not validate_uri(json["id"], 'respondent'):
-            app.logger.warning("""Party Service POST did not contain a valid id in the id field. We
-                               received: {}""".format(json['id']))
-            res = Response(response="invalid id, object invalid", status=404, mimetype="text/html")
-            return res
-
         if not validate_status_code(json["status"]):
             app.logger.warning("""Party Service POST did not contain a valid status code in the status field. We
                                received: {}""".format(json['status']))
@@ -457,7 +464,7 @@ def create_respondent():
             return res
 
         try:
-            new_respondent = Respondent(party_id=json["id"],
+            new_respondent = Respondent(party_id="Respondent",
                                         status=json["status"],
                                         email_address=json["emailAddress"],
                                         first_name=json["firstName"],

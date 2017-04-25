@@ -64,6 +64,29 @@ CREATE TABLE ras_party.ras_businesses
 --
 DROP TABLE IF EXISTS ras_party.ras_respondents CASCADE;
 
+-- CREATE TABLE ras_party.ras_respondents
+-- (id             BIGSERIAL                 NOT NULL
+-- ,party_id       CHARACTER VARYING (255)   NOT NULL
+-- ,status         CHARACTER VARYING (30)    NOT NULL
+-- ,email_address  CHARACTER VARYING (255)   NOT NULL
+-- ,first_name     CHARACTER VARYING (100)   NOT NULL
+-- ,last_name      CHARACTER VARYING (100)   NOT NULL
+-- ,telephone      CHARACTER VARYING (20)
+-- ,created_on     TIMESTAMP WITH TIME ZONE  NOT NULL DEFAULT NOW()
+-- ,CONSTRAINT ras_res_pk
+--    PRIMARY KEY (id)
+-- ,CONSTRAINT ras_bus_partyid_uk
+--    UNIQUE (party_id)
+-- ,CONSTRAINT ras_bus_emailaddress_uk
+--    UNIQUE (email_address)
+-- ,CONSTRAINT valid_status
+--    CHECK (status IN ('CREATED'
+--                     ,'ACTIVE'
+--                     ,'SUSPENDED'))
+-- );
+
+
+
 CREATE TABLE ras_party.ras_respondents
 (id             BIGSERIAL                 NOT NULL
 ,party_id       CHARACTER VARYING (255)   NOT NULL
@@ -75,8 +98,6 @@ CREATE TABLE ras_party.ras_respondents
 ,created_on     TIMESTAMP WITH TIME ZONE  NOT NULL DEFAULT NOW()
 ,CONSTRAINT ras_res_pk
    PRIMARY KEY (id)
-,CONSTRAINT ras_bus_partyid_uk
-   UNIQUE (party_id)
 ,CONSTRAINT ras_bus_emailaddress_uk
    UNIQUE (email_address)
 ,CONSTRAINT valid_status
@@ -84,6 +105,8 @@ CREATE TABLE ras_party.ras_respondents
                     ,'ACTIVE'
                     ,'SUSPENDED'))
 );
+
+
 
 
 --

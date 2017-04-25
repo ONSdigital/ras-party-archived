@@ -121,7 +121,7 @@ def validate_phone_number(telephone):
 def validate_status_code(status):
 
     # A small helper function which validates a status code to ensure that it either
-    # [ ACTIVE | CREATED | ACTIVE | SUSPENDED ]
+    # [ ACTIVE | CREATED | SUSPENDED ]
 
     if status in settings.STATUS_CODES:
         return True
@@ -129,12 +129,12 @@ def validate_status_code(status):
         return False
 
 
-def validate_email_unique(email_address):
-    # A small helper function which checks the part service does not have an email in the syste that is unique
-
-    #TODO A sql look up to ensure that this is a unique email address in the database. For now we just return true.
-
-    return True
+# def validate_email_unique(email_address):
+#     # A small helper function which checks the part service does not have an email in the syste that is unique
+#
+#     #TODO A sql look up to ensure that this is a unique email address in the database. For now we just return true.
+#
+#     return True
 
 def validate_scope(jwt_token, scope_type):
     """
@@ -148,16 +148,29 @@ def validate_scope(jwt_token, scope_type):
     app.logger.info("validate_scope jwt_token: {}, scope_type: {}".format(jwt_token, scope_type))
 
     # Make sure we can decrypt the token and it makes sense
+    return_val= False
     try:
         decrypted_jwt_token = decode(jwt_token)
-        if decrypted_jwt_token['user_scopes']:
-            for user_scope_list in decrypted_jwt_token['user_scopes']:
+        if decrypted_jwt_token['scope']:
+            for user_scope_list in decrypted_jwt_token['scope']:
                 if user_scope_list == scope_type:
                     app.logger.debug('Valid JWT scope.')
-                    return True
+                    return_val=True
 
-        app.logger.warning('Invalid JWT scope.')
-        return False
+        if not return_val:
+            app.logger.warning('Invalid JWT scope.')
+            return False
+
+        if decrypted_jwt_token['expires_at']:
+            # We have a time stamp so check this token has not expired
+            #TODO Add UTC Time stamp validation
+            app.logger.info('Token: {} has a UTC time stamp of: {}'.format(decrypted_jwt_token['access_token'],decrypted_jwt_token['expires_at']))
+        else:
+            # We don't have a time stamp
+            app.logger.warning('Token has expired for token Value: {}'.format(decrypted_jwt_token['access_token']))
+            return False
+
+        return return_val
 
     except JWTError:
         app.logger.warning('JWT scope could not be validated.')
@@ -378,7 +391,7 @@ def add_binary(_id):
 
 
 @app.route('/respondents/', methods=['POST'])
-def create():
+def create_respondent():
     """
     This endpoint creates a respondent record, from the POST data.
     It takes in a parameter list for a user as:
@@ -400,7 +413,7 @@ def create():
     # First check that we have a valid JWT token if we don't send a 400 error with authorisation failure
     if request.headers.get('authorization'):
         jwt_token = request.headers.get('authorization')
-        if not validate_scope(jwt_token, 'ci.write'):
+        if not validate_scope(jwt_token, 'foo'):
             res = Response(response="Invalid token/scope to access this Microservice Resource", status=400, mimetype="text/html")
             return res
     else:
@@ -414,7 +427,7 @@ def create():
         response = make_response("")
 
         party_respondent.append(request.json)
-        response.headers["location"] = "/partyservice/" + str(json["id"])
+        response.headers["location"] = "/respondents/"
 
         # Check that we have all the correct attributes in our json object.
         try:
@@ -430,11 +443,11 @@ def create():
             res = Response(response="invalid input, object invalid", status=404, mimetype="text/html")
             return res
 
-        if not validate_email_unique(json["emailAddress"]):
-            app.logger.warning("""Party Service POST did not contain a unique email
-                               in the emailAddress field. We received: {}""".format(json['emailAddress']))
-            res = Response(response="duplicate user ID, object invalid", status=404, mimetype="text/html")
-            return res
+        # if not validate_email_unique(json["emailAddress"]):
+        #     app.logger.warning("""Party Service POST did not contain a unique email
+        #                        in the emailAddress field. We received: {}""".format(json['emailAddress']))
+        #     res = Response(response="duplicate user ID, object invalid", status=404, mimetype="text/html")
+        #     return res
 
         if not validate_status_code(json["status"]):
             app.logger.warning("""Party Service POST did not contain a valid status code in the status field. We
@@ -443,25 +456,36 @@ def create():
             return res
 
         if not validate_phone_number(json["telephone"]):
-            app.logger.warning("""Party Service POST did not contain a valid UK phone number in the telephon field. We
+            app.logger.warning("""Party Service POST did not contain a valid UK phone number in the telephone field. We
                                received: {}""".format(json['telephone']))
             res = Response(response="invalid phone number, object invalid", status=404, mimetype="text/html")
             return res
 
-        #TODO Create a DB entry to save our uniquie user
+        try:
+            new_respondent = Respondent(party_id="Respondent",
+                                        status=json["status"],
+                                        email_address=json["emailAddress"],
+                                        first_name=json["firstName"],
+                                        last_name=json["lastName"],
+                                        telephone=json["telephone"])
 
-        collection_path = response.headers["location"] = "/respondents/" + str(new_object.id)
+            db.session.add(new_respondent)
+            db.session.commit()
+
+        except:
+            app.logger.error("DB exception: {}".format(sys.exc_info()[0]))
+            response = Response(response="Error in the Party DB.", status=500, mimetype="text/html")
+            return response
+
+        collection_path = response.headers["location"] = "/respondents/" + str(new_respondent.id)
         etag = hashlib.sha1(collection_path).hexdigest()
         response.set_etag(etag)
 
-        response.headers["id"] = "/respondents/urn:ons.gov.uk:id:respondent:001.234.56789"
+        response.headers["id"] = "/respondents/" + str(new_respondent.id)
         return response, 201
 
     return jsonify({"message": "Please provide a valid Json object.",
                     "hint": "you may need to pass a content-type: application/json header"}), 400
-
-
-
 
 
 # example command to search on just a survey urn:
@@ -540,4 +564,5 @@ if __name__ == '__main__':
     db.init_app(app)
 
     # Run
-    app.run(port=5062, debug=False)
+    PORT = int(os.environ.get('PORT', 5062))
+    app.run(host='0.0.0.0', port=PORT, debug=False)

@@ -11,7 +11,6 @@ import logging
 from logging import Formatter
 from logging.handlers import RotatingFileHandler
 
-
 from flask import request, Response, send_from_directory, make_response, jsonify, Flask
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
@@ -21,12 +20,14 @@ from jwt import decode
 from json import JSONEncoder
 import phonenumbers
 from phonenumbers.phonenumberutil import NumberParseException
-from config import PartyService
+
+import settings
 
 # Enable cross-origin requests
 app = Flask(__name__)
 CORS(app)
 
+app.config['SQLALCHEMY_DATABASE_URI'] = settings.SQLALCHEMY_DATABASE_URI
 
 #
 # http://docs.sqlalchemy.org/en/latest/core/type_basics.html
@@ -39,9 +40,6 @@ CORS(app)
 """
 [{TO BE DONE}]
 """
-
-if 'APP_SETTINGS' in os.environ:
-    app.config.from_object(os.environ['APP_SETTINGS'])
 
 # app.config.from_object("config.StagingConfig")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -125,7 +123,7 @@ def validate_status_code(status):
     # A small helper function which validates a status code to ensure that it either
     # [ ACTIVE | CREATED | ACTIVE | SUSPENDED ]
 
-    if status in PartyService.STATUS_CODES:
+    if status in settings.STATUS_CODES:
         return True
     else:
         return False

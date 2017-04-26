@@ -9,7 +9,7 @@ TESTING = False
 CSRF_ENABLED = True
 SECRET_KEY = 'this-really-needs-to-be-changed'
 dbname = "ras_party"
-SQLALCHEMY_DATABASE_URI = "postgresql://" + dbname + ":password@localhost:5431/postgres"
+SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI', 'postgresql://ras_party:password@localhost:5431/postgres')
 
 STATUS_CODES = ['ACTIVE', 'CREATED', 'SUSPENDED']
 
@@ -31,11 +31,10 @@ STATUS_CODES = ['ACTIVE', 'CREATED', 'SUSPENDED']
 
 AUTHORIZATION_ENDPOINT = "https://www.facebook.com/dialog/oauth"  # Facebook Auth endpoint
 TOKEN_ENDPOINT = "https://graph.facebook.com/oauth/access_token"  # Facebook token endpoint
-
-ONS_OAUTH_PROTOCOL = "http://"
-ONS_OAUTH_SERVER = "localhost:8000"
-RAS_FRONTSTAGE_CLIENT_ID = "onc@onc.gov"
-RAS_FRONTSTAGE_CLIENT_SECRET = "password"
-ONS_AUTHORIZATION_ENDPOINT = "/web/authorize/"
-ONS_TOKEN_ENDPOINT = "/api/v1/tokens/"
-ONS_ADMIN_ENDPOINT = '/api/account/create'
+ONS_OAUTH_PROTOCOL = os.environ.get('ONS_OAUTH_PROTOCOL', 'http://')
+ONS_OAUTH_SERVER = os.environ.get('ONS_OAUTH_SERVER', 'localhost:8040')
+RAS_PARTY_CLIENT_ID = os.environ.get('RAS_PARTY_CLIENT_ID', 'ons@ons.gov')
+RAS_PARTY_CLIENT_SECRET = os.environ.get('RAS_PARTY_CLIENT_SECRET', 'password')
+ONS_AUTHORIZATION_ENDPOINT = os.environ.get('ONS_AUTHORIZATION_ENDPOINT', '/web/authorize/')
+ONS_TOKEN_ENDPOINT = os.environ.get('ONS_TOKEN_ENDPOINT', '/api/v1/tokens/')
+ONS_ADMIN_ENDPOINT = os.environ.get('ONS_ADMIN_ENDPOINT', '/api/account/create')

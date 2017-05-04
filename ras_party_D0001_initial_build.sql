@@ -24,6 +24,7 @@ DROP TABLE IF EXISTS ras_party.ras_businesses CASCADE;
 CREATE TABLE ras_party.ras_businesses
 (id              BIGSERIAL                 NOT NULL
 ,business_ref    CHARACTER VARYING (11)    NOT NULL
+,party_id        CHARACTER VARYING (255)   NOT NULL
 ,name            CHARACTER VARYING (255)   NOT NULL
 ,trading_name    CHARACTER VARYING (255)
 ,enterprise_name CHARACTER VARYING (255)
@@ -44,8 +45,10 @@ CREATE TABLE ras_party.ras_businesses
 ,created_on      TIMESTAMP WITH TIME ZONE  NOT NULL DEFAULT NOW()
 ,CONSTRAINT ras_bus_pk
    PRIMARY KEY (id)
-,CONSTRAINT ras_bus_uk
+,CONSTRAINT ras_bus_bus_ref_uk
    UNIQUE (business_ref)
+,CONSTRAINT ras_bus_party_id_uk
+   UNIQUE (party_id)
 ,CONSTRAINT valid_legal_status
    CHECK (legal_status IN ('COMMUNITY_INTEREST_COMPANY'
                           ,'CHARITABLE_INCORPORATED_ORGANISATION'
@@ -98,7 +101,9 @@ CREATE TABLE ras_party.ras_respondents
 ,created_on     TIMESTAMP WITH TIME ZONE  NOT NULL DEFAULT NOW()
 ,CONSTRAINT ras_res_pk
    PRIMARY KEY (id)
-,CONSTRAINT ras_bus_emailaddress_uk
+,CONSTRAINT ras_res_party_id_uk
+   UNIQUE (party_id)
+,CONSTRAINT ras_res_emailaddress_uk
    UNIQUE (email_address)
 ,CONSTRAINT valid_status
    CHECK (status IN ('CREATED'
@@ -193,18 +198,41 @@ DROP TABLE IF EXISTS ras_party.ras_enrolment_codes CASCADE;
 
 CREATE TABLE ras_party.ras_enrolment_codes
 (id                       BIGSERIAL                 NOT NULL
-,respondent_id            CHARACTER VARYING (255)   NOT NULL
-,reporting_unit_id        CHARACTER VARYING (255)   NOT NULL
+,respondent_id            BIGINT
+,business_id              BIGINT                    NOT NULL
 ,survey_id                CHARACTER VARYING (255)   NOT NULL
+,iac                      TEXT
 ,status                   CHARACTER VARYING (30)    NOT NULL
 ,created_on               TIMESTAMP WITH TIME ZONE  NOT NULL DEFAULT NOW()
 ,CONSTRAINT ras_enc_pk
    PRIMARY KEY (id)
+,CONSTRAINT ras_enc_res_fk
+   FOREIGN KEY (respondent_id)
+     REFERENCES ras_party.ras_respondents(id)
+,CONSTRAINT ras_enc_bus_fk
+   FOREIGN KEY (business_id)
+     REFERENCES ras_party.ras_businesses(id)
 ,CONSTRAINT valid_status
    CHECK (status IN ('ACTIVE'
                     ,'REDEEMED'
                     ,'REVOKED'))
 );
+
+--
+-- Index: ras_enc_res_fk_idx - FK Index
+--
+CREATE INDEX ras_enc_res_fk_idx ON ras_party.ras_enrolment_codes(respondent_id);
+
+--
+-- Index: ras_enc_bus_fk_idx - FK Index
+--
+CREATE INDEX ras_enc_bus_fk_idx ON ras_party.ras_enrolment_codes(business_id);
+
+--
+-- Index: ras_enc_iac_idx
+--
+CREATE INDEX ras_enc_iac_idx ON ras_party.ras_enrolment_codes(iac);
+
 
 --
 -- Table: ras_enrolment_invitations [ENI]
@@ -213,19 +241,40 @@ DROP TABLE IF EXISTS ras_party.ras_enrolment_invitations CASCADE;
 
 CREATE TABLE ras_party.ras_enrolment_invitations
 (id                       BIGSERIAL                 NOT NULL
-,respondent_id            CHARACTER VARYING (255)   NOT NULL
+,respondent_id            BIGINT                    NOT NULL
 ,target_email             CHARACTER VARYING (255)   NOT NULL
+,verification_token       UUID                      NOT NULL
+,sms_verification_token   INTEGER                   NOT NULL
 ,status                   CHARACTER VARYING (30)    NOT NULL
 ,effective_from           TIMESTAMP WITH TIME ZONE  NOT NULL
 ,effective_to             TIMESTAMP WITH TIME ZONE
 ,created_on               TIMESTAMP WITH TIME ZONE  NOT NULL DEFAULT NOW()
 ,CONSTRAINT ras_eni_pk
    PRIMARY KEY (id)
+,CONSTRAINT ras_eni_res_fk
+   FOREIGN KEY (respondent_id)
+     REFERENCES ras_party.ras_respondents(id)
 ,CONSTRAINT valid_status
    CHECK (status IN ('ACTIVE'
                     ,'REDEEMED'
                     ,'REVOKED'))
 );
+
+--
+-- Index: ras_eni_res_fk_idx - FK Index
+--
+CREATE INDEX ras_eni_res_fk_idx ON ras_party.ras_enrolment_invitations(respondent_id);
+
+--
+-- Index: ras_enc_ver_tok_idx
+--
+CREATE INDEX ras_enc_ver_tok_idx ON ras_party.ras_enrolment_invitations(verification_token);
+
+--
+-- Index: ras_enc_sms_tok_idx
+--
+CREATE INDEX ras_enc_sms_tok_idx ON ras_party.ras_enrolment_invitations(sms_verification_token);
+
 
 --
 -- some initial data
@@ -288,5 +337,23 @@ VALUES
   ,'urn:uk.gov.ons:id:survey:BRES'
   ,'ENABLED'
   );
+
+INSERT INTO ras_party.ras_enrolment_codes
+  (respondent_id, business_id, survey_id, iac, status)
+VALUES
+  (NULL
+  ,(SELECT id
+    FROM   ras_party.ras_businesses
+    WHERE  business_ref = '11111111111')
+  ,'urn:uk.gov.ons:id:survey:BRES'
+  ,'1111-1111-1111-1111'
+  ,'ACTIVE')
+ ,(NULL
+  ,(SELECT id
+    FROM   ras_party.ras_businesses
+    WHERE  business_ref = '22222222222')
+  ,'urn:uk.gov.ons:id:survey:BRES'
+  ,'2222-2222-2222-2222'
+  ,'ACTIVE');
 
 COMMIT;

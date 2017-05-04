@@ -65,6 +65,14 @@ class PartyService(Config):
 
     STATUS_CODES = ['ACTIVE', 'CREATED', 'SUSPENDED']         # used in registering a new user
 
+    ENROLMENT_STATUS_CODES = ['ACTIVE', 'REDEEMED', 'REVOKED']
+
+    LEGAL_STATUS_CODES = ['COMMUNITY_INTEREST_COMPANY', 'CHARITABLE_INCORPORATED_ORGANISATION',
+                         'INDUSTRIAL_AND_PROVIDENT_SOCIETY', 'GENERAL_PARTNERSHIP',
+                         'LIMITED_LIABILITY_PARTNERSHIP', 'LIMITED_PARTNERSHIP',
+                         'PRIVATE_LIMITED_COMPANY', 'PUBLIC_LIMITED_COMPANY',
+                         'UNLIMITED_COMPANY', 'SOLE_PROPRIETORSHIP']
+
 
 class OAuthConfig(Config):
     """

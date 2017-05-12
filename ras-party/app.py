@@ -176,41 +176,43 @@ def validate_scope(jwt_token, scope_type):
     :return: Boolean
     """
 
-    app.logger.info("validate_scope jwt_token: {}, scope_type: {}".format(jwt_token, scope_type))
+    return True
 
-    # Make sure we can decrypt the token and it makes sense
-
-    return_val= False
-    try:
-        decrypted_jwt_token = decode(jwt_token)
-        if decrypted_jwt_token['scope']:
-            for user_scope_list in decrypted_jwt_token['scope']:
-                if user_scope_list == scope_type:
-                    app.logger.debug('Valid JWT scope.')
-                    return_val=True
-
-        if not return_val:
-            app.logger.warning('Invalid JWT scope.')
-            return False
-
-        if decrypted_jwt_token['expires_at']:
-            # We have a time stamp so check this token has not expired
-            #TODO Add UTC Time stamp validation
-            app.logger.info('Token: {} has a UTC time stamp of: {}'.format(decrypted_jwt_token['access_token'],decrypted_jwt_token['expires_at']))
-        else:
-            # We don't have a time stamp
-            app.logger.warning('Token has expired for token Value: {}'.format(decrypted_jwt_token['access_token']))
-            return False
-
-        return return_val
-
-    except JWTError:
-        app.logger.warning('JWT scope could not be validated.')
-        return False
-
-    except KeyError:
-        app.logger.warning('JWT scope could not be validated.')
-        return False
+    # app.logger.info("validate_scope jwt_token: {}, scope_type: {}".format(jwt_token, scope_type))
+    #
+    # # Make sure we can decrypt the token and it makes sense
+    #
+    # return_val= False
+    # try:
+    #     decrypted_jwt_token = decode(jwt_token)
+    #     if decrypted_jwt_token['scope']:
+    #         for user_scope_list in decrypted_jwt_token['scope']:
+    #             if user_scope_list == scope_type:
+    #                 app.logger.debug('Valid JWT scope.')
+    #                 return_val=True
+    #
+    #     if not return_val:
+    #         app.logger.warning('Invalid JWT scope.')
+    #         return False
+    #
+    #     if decrypted_jwt_token['expires_at']:
+    #         # We have a time stamp so check this token has not expired
+    #         #TODO Add UTC Time stamp validation
+    #         app.logger.info('Token: {} has a UTC time stamp of: {}'.format(decrypted_jwt_token['access_token'],decrypted_jwt_token['expires_at']))
+    #     else:
+    #         # We don't have a time stamp
+    #         app.logger.warning('Token has expired for token Value: {}'.format(decrypted_jwt_token['access_token']))
+    #         return False
+    #
+    #     return return_val
+    #
+    # except JWTError:
+    #     app.logger.warning('JWT scope could not be validated.')
+    #     return False
+    #
+    # except KeyError:
+    #     app.logger.warning('JWT scope could not be validated.')
+    #     return False
 
 
 @app.route('/enrolment-codes/<string:enrolment_code>', methods=['GET'])
@@ -263,7 +265,7 @@ def get_enrolment_code(enrolment_code):
     return response
 
 
-@app.route('/enrolment-codes/redeem/<string:enrolment_code>', methods=['PUT'])
+@app.route('/enrolment-codes/<string:enrolment_code>', methods=['PUT'])
 def set_enrolment_code_as_redeemed(enrolment_code, respondent_urn=None):
     """
     Mark an enrolment_code as redeemed by its iac.
@@ -288,8 +290,6 @@ def set_enrolment_code_as_redeemed(enrolment_code, respondent_urn=None):
         return res
 
     try:
-        app.logger.debug("Querying DB in set_enrolment_code_as_redeemed")
-
         app.logger.debug("Querying DB with set_enrolment_code_as_redeemed:{}".format(enrolment_code))
 
         enrolment_codes = (db.session.query(EnrolmentCode)
@@ -327,6 +327,10 @@ def set_enrolment_code_as_redeemed(enrolment_code, respondent_urn=None):
         db.session.commit()
 
     except exc.OperationalError:
+
+        # rollback the whole transaction
+        db.session.rollback()
+
         app.logger.error("DB exception: {}".format(sys.exc_info()[0]))
         response = Response(response="Error in the Party DB.", status=500, mimetype="text/html")
         return response
@@ -583,15 +587,16 @@ def create_businesses():
         response.headers["location"] = "/respondents/"
 
         # Check that we have all the correct attributes in our json object.
-        try:
+        if check_json("businessRef", json) \
+        and check_json("name", json) \
+        and check_json("addressLine1", json) \
+        and check_json("city", json) \
+        and check_json("postcode", json):
+            json_ok = True
+        else:
+            json_ok = False
 
-            json["businessRef"]
-            json["name"]
-            json["addressLine1"]
-            json["city"]
-            json["postcode"]
-
-        except KeyError:
+        if not json_ok:
             app.logger.warning("""Party Service POST did not contain correct mandatory
                                parameters in it's JSON payload: {}""".format(str(json)))
             res = Response(response="invalid input, object invalid", status=404, mimetype="text/html")
@@ -599,13 +604,13 @@ def create_businesses():
 
         if not validate_legal_status_code(json["legalStatus"]):
             app.logger.warning("""Party Service POST did not contain a valid legal status code in the legal status field.
-                               Received: {}""".format(json['legalStatus']))
+                               Received: {}""".format(json.get("legalStatus")))
             res = Response(response="invalid status code, object invalid", status=404, mimetype="text/html")
             return res
 
         if not validate_phone_number(json["telephone"]):
             app.logger.warning("""Party Service POST did not contain a valid UK phone number in the telephone field.
-                               Received: {}""".format(json['telephone']))
+                               Received: {}""".format(json.get("telephone")))
             res = Response(response="invalid phone number, object invalid", status=404, mimetype="text/html")
             return res
 
@@ -614,25 +619,45 @@ def create_businesses():
             new_business_urn = generate_urn('business')
 
             # create business
+
+            new_business_ref = json.get("businessRef")
+            new_name = json.get("name")
+            new_trading_name = json.get("tradingName")
+            new_enterprise_name = json.get("enterpriseName")
+            new_contact_name = json.get("contactName")
+            new_address_line_1 = json.get("addressLine1")
+            new_address_line_2 = json.get("addressLine2")
+            new_address_line_3 = json.get("addressLine3")
+            new_city = json.get("city")
+            new_postcode = json.get("postcode")
+            new_telephone = json.get("telephone")
+            new_employee_count = json.get("employeeCount")
+            new_facsimile = json.get("facsimile")
+            new_fulltime_count = json.get("fulltimeCount")
+            new_legal_status = json.get("legalStatus")
+            new_sic_2003 = json.get("sic2003")
+            new_sic_2007 = json.get("sic2007")
+            new_turnover = json.get("turnover")
+
             new_business = Business(party_id=new_business_urn,
-                                    business_ref=json["businessRef"],
-                                    name=json["name"],
-                                    trading_name=json["tradingName"],
-                                    enterprise_name=json["enterpriseName"],
-                                    contact_name=json["contactName"],
-                                    address_line_1=json["addressLine1"],
-                                    address_line_2=json["addressLine2"],
-                                    address_line_3=json["addressLine3"],
-                                    city=json["city"],
-                                    postcode=json["postcode"],
-                                    telephone=json["telephone"],
-                                    employee_count=json["employeeCount"],
-                                    facsimile=json["facsimile"],
-                                    fulltime_count=json["fulltimeCount"],
-                                    legal_status=json["legalStatus"],
-                                    sic_2003=json["sic2003"],
-                                    sic_2007=json["sic2007"],
-                                    turnover=json["turnover"])
+                                    business_ref=new_business_ref,
+                                    name=new_name,
+                                    trading_name=new_trading_name,
+                                    enterprise_name=new_enterprise_name,
+                                    contact_name=new_contact_name,
+                                    address_line_1=new_address_line_1,
+                                    address_line_2=new_address_line_2,
+                                    address_line_3=new_address_line_3,
+                                    city=new_city,
+                                    postcode=new_postcode,
+                                    telephone=new_telephone,
+                                    employee_count=new_employee_count,
+                                    facsimile=new_facsimile,
+                                    fulltime_count=new_fulltime_count,
+                                    legal_status=new_legal_status,
+                                    sic_2003=new_sic_2003,
+                                    sic_2007=new_sic_2007,
+                                    turnover=new_turnover)
 
             db.session.add(new_business)
             db.session.flush()
@@ -658,6 +683,13 @@ def create_businesses():
 
     return jsonify({"message": "Please provide a valid Json object.",
                     "hint": "you may need to pass a content-type: application/json header"}), 400
+
+
+def check_json(key, json):
+    if key in json:
+        return True
+    else:
+        return False
 
 
 @app.route('/respondents/', methods=['POST'])
@@ -700,15 +732,17 @@ def create_respondent():
         response.headers["location"] = "/respondents/"
 
         # Check that we have all the correct attributes in our json object.
-        try:
-            json["emailAddress"]
-            json["firstName"]
-            json["lastName"]
-            json["telephone"]
-            json["status"]
-            json["enrolmentCode"]
+        if check_json("emailAddress", json) \
+        and check_json("firstName", json) \
+        and check_json("lastName", json) \
+        and check_json("telephone", json) \
+        and check_json("status", json) \
+        and check_json("enrolmentCode", json):
+            json_ok = True
+        else:
+            json_ok = False
 
-        except KeyError:
+        if not json_ok:
             app.logger.warning("""Party Service POST did not contain correct mandatory
                                parameters in it's JSON payload: {}""".format(str(json)))
             res = Response(response="invalid input, object invalid", status=404, mimetype="text/html")
@@ -716,68 +750,90 @@ def create_respondent():
 
         if not validate_status_code(json["status"]):
             app.logger.warning("""Party Service POST did not contain a valid status code in the status field. We
-                               received: {}""".format(json['status']))
+                               received: {}""".format(json.get("status")))
             res = Response(response="invalid status code, object invalid", status=404, mimetype="text/html")
             return res
 
         if not validate_phone_number(json["telephone"]):
             app.logger.warning("""Party Service POST did not contain a valid UK phone number in the telephone field. We
-                               received: {}""".format(json['telephone']))
+                               received: {}""".format(json.get("telephone") ))
             res = Response(response="invalid phone number, object invalid", status=404, mimetype="text/html")
             return res
 
         try:
 
-            # generate a new respondent urn
+            """
+            generate a new respondent urn
+            """
             new_respondent_urn = generate_urn('respondent')
 
-            # get the case context for the iac
+            """
+            get the case context for the iac
+            """
             survey_id, business_id = get_case_context(json["enrolmentCode"])
 
             if survey_id and business_id:
 
-                # set the statuses
-                if json["status"] == 'CREATED':
-                    business_association_status = 'INACTIVE'
+                """
+                set the statuses
+                """
+                if json.get("status") == 'CREATED':
+                    business_association_status = 'PENDING'
                     enrolment_status = 'PENDING'
-                elif json["status"] == 'ACTIVE':
+                elif json.get("status") == 'ACTIVE':
                     business_association_status = 'ACTIVE'
                     enrolment_status = 'ACTIVE'
-                elif json["status"] == 'SUSPENDED':
+                elif json.get("status") == 'SUSPENDED':
                     business_association_status = 'INACTIVE'
                     enrolment_status = 'SUSPENDED'
                 else:
-                    business_association_status = 'INACTIVE'
+                    business_association_status = 'PENDING'
                     enrolment_status = 'PENDING'
 
-                # create respondent
+                """
+                create respondent
+                """
+                new_status = json.get("status")
+                new_email_address = json.get("emailAddress")
+                new_first_name = json.get("firstName")
+                new_last_name = json.get("lastName")
+                new_telephone = json.get("telephone")
+
                 new_respondent = Respondent(party_id=new_respondent_urn,
-                                            status=json["status"],
-                                            email_address=json["emailAddress"],
-                                            first_name=json["firstName"],
-                                            last_name=json["lastName"],
-                                            telephone=json["telephone"])
+                                            status=new_status,
+                                            email_address=new_email_address,
+                                            first_name=new_first_name,
+                                            last_name=new_last_name,
+                                            telephone=new_telephone)
                 db.session.add(new_respondent)
                 db.session.flush()
 
-                # create business association
+                """
+                create business association
+                """
                 new_business_association = BusinessAssociation(business_id=business_id,
                                                                respondent_id=new_respondent.id,
                                                                status=business_association_status)
                 db.session.add(new_business_association)
                 db.session.flush()
 
-                # create enrolment
+                """
+                create enrolment
+                """
                 new_enrolment = Enrolment(business_association_id=new_business_association.id,
                                           survey_id=survey_id,
                                           status=enrolment_status)
                 db.session.add(new_enrolment)
 
-                # create enrolment invitation
+                """
+                create enrolment invitation
+                """
                 verification_token = str(uuid.uuid4())
                 sms_verification_token = randint(0, 999999)
                 new_enrolment_invitation = EnrolmentInvitation(respondent_id=new_respondent.id,
-                                                               target_email=json["emailAddress"],
+                                                               business_id=business_id,
+                                                               survey_id=survey_id,
+                                                               target_email=new_email_address,
                                                                verification_token=verification_token,
                                                                sms_verification_token=sms_verification_token,
                                                                status='ACTIVE')
@@ -786,7 +842,9 @@ def create_respondent():
 
                 # TODO call notification service to send verification email
 
-                # commit the whole transaction
+                """
+                commit the whole transaction
+                """
                 db.session.commit()
 
             else:
@@ -797,7 +855,9 @@ def create_respondent():
 
         except:
 
-            # rollback the whole transaction
+            """
+            rollback the whole transaction
+            """
             db.session.rollback()
 
             app.logger.error("DB exception: {}".format(sys.exc_info()[0]))
@@ -813,6 +873,154 @@ def create_respondent():
 
     return jsonify({"message": "Please provide a valid Json object.",
                     "hint": "you may need to pass a content-type: application/json header"}), 400
+
+@app.route('/verification-tokens/<string:verification_token>', methods=['PUT'])
+def set_verification_token_as_redeemed(verification_token):
+    """
+    Mark a verification_token as redeemed.
+    :param verification_token: String
+    :return: Http Response
+    """
+
+    app.logger.info("respondents/create_respondent()")
+
+    # First check that we have a valid JWT token if we don't send a 400 error with authorisation failure
+    if request.headers.get('authorization'):
+        jwt_token = request.headers.get('authorization')
+        if not validate_scope(jwt_token, 'ps.write'):
+            res = Response(response="Invalid token/scope to access this Microservice Resource", status=400, mimetype="text/html")
+            return res
+    else:
+        res = Response(response="Valid token/scope is required to access this Microservice Resource", status=400, mimetype="text/html")
+        return res
+
+    try:
+        app.logger.debug("Querying DB with set_verification_token_as_redeemed:{}".format(verification_token))
+
+        """
+        redeem the verification token
+        """
+        enrolment_invitation = (db.session.query(EnrolmentInvitation)
+                               .filter(EnrolmentInvitation.status == 'ACTIVE')
+                               .filter(EnrolmentInvitation.verification_token == verification_token))
+
+        existing_enrolment_invitation = [[eni.id, eni.respondent_id, eni.business_id, eni.survey_id, eni.target_email,
+                                          eni.verification_token, eni.sms_verification_token, eni.status]
+                                          for eni in enrolment_invitation]
+
+        if not existing_enrolment_invitation:
+            app.logger.info("Verication token not found for set_verification_token_as_redeemed")
+            response = Response(response="Verication token not found", status=400, mimetype="text/html")
+            return response
+
+        new_enrolment_invitation = EnrolmentInvitation(id=existing_enrolment_invitation[0][0],
+                                                       respondent_id=existing_enrolment_invitation[0][1],
+                                                       business_id=existing_enrolment_invitation[0][2],
+                                                       survey_id=existing_enrolment_invitation[0][3],
+                                                       target_email=existing_enrolment_invitation[0][4],
+                                                       verification_token=existing_enrolment_invitation[0][5],
+                                                       sms_verification_token=existing_enrolment_invitation[0][6],
+                                                       status='REDEEMED')
+
+        db.session.merge(new_enrolment_invitation)
+        db.session.flush()
+
+        """
+        activate the respondent
+        """
+
+        respondent = (db.session.query(Respondent)
+                     .filter(Respondent.status == 'CREATED')
+                     .filter(Respondent.id == new_enrolment_invitation.respondent_id))
+
+        existing_respondent = [[res.id, res.party_id, res.email_address,
+                                res.first_name, res.last_name, res.telephone]
+                                for res in respondent]
+
+        if not existing_respondent:
+            db.session.rollback()
+            app.logger.info("Respondent not found for set_verification_token_as_redeemed")
+            response = Response(response="Respondent not found", status=400, mimetype="text/html")
+            return response
+
+        new_respondent = Respondent(id=existing_respondent[0][0],
+                                    party_id=existing_respondent[0][1],
+                                    status='ACTIVE',
+                                    email_address=existing_respondent[0][2],
+                                    first_name=existing_respondent[0][3],
+                                    last_name=existing_respondent[0][4],
+                                    telephone=existing_respondent[0][5])
+        db.session.merge(new_respondent)
+        db.session.flush()
+
+        """
+        activate the business association
+        """
+        business_association = (db.session.query(BusinessAssociation)
+                               .filter(BusinessAssociation.status == 'PENDING')
+                               .filter(BusinessAssociation.respondent_id == new_respondent.id)
+                               .filter(BusinessAssociation.business_id == new_enrolment_invitation.business_id))
+
+        existing_business_association = [[bua.id, bua.business_id, bua.respondent_id,
+                                          bua.effective_from, bua.effective_to]
+                                          for bua in business_association]
+
+        if not existing_business_association:
+            db.session.rollback()
+            app.logger.info("Business Association not found for set_verification_token_as_redeemed")
+            response = Response(response="Business Association not found", status=400, mimetype="text/html")
+            return response
+
+        new_business_association = BusinessAssociation(id=existing_business_association[0][0],
+                                                       business_id=existing_business_association[0][1],
+                                                       respondent_id=existing_business_association[0][2],
+                                                       status='ACTIVE',
+                                                       effective_from=existing_business_association[0][3],
+                                                       effective_to=existing_business_association[0][4])
+        db.session.merge(new_business_association)
+        db.session.flush()
+
+        """
+        activate the enrolment
+        """
+        enrolment = (db.session.query(Enrolment)
+                    .filter(Enrolment.status == 'PENDING')
+                    .filter(Enrolment.business_association_id == new_business_association.id)
+                    .filter(Enrolment.survey_id == new_enrolment_invitation.survey_id))
+
+        existing_enrolment = [[enr.id, enr.business_association_id, enr.survey_id]
+                               for enr in enrolment]
+
+        if not existing_enrolment:
+            db.session.rollback()
+            app.logger.info("Enrolment not found for set_verification_token_as_redeemed")
+            response = Response(response="Enrolment not found", status=400, mimetype="text/html")
+            return response
+
+        new_enrolment = Enrolment(id=existing_enrolment[0][0],
+                                  business_association_id=existing_enrolment[0][1],
+                                  survey_id=existing_enrolment[0][2],
+                                  status='ENABLED')
+        db.session.merge(new_enrolment)
+
+        """
+        commit the whole transaction
+        """
+        db.session.commit()
+
+    except exc.OperationalError:
+
+        """
+        rollback the whole transaction
+        """
+        db.session.rollback()
+
+        app.logger.error("DB exception: {}".format(sys.exc_info()[0]))
+        response = Response(response="Error in the Party DB.", status=500, mimetype="text/html")
+        return response
+
+    response = Response(response="Verification token redeemed", status=200, mimetype="text/html")
+    return response
 
 
 if __name__ == '__main__':

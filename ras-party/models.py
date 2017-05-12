@@ -144,21 +144,23 @@ class EnrolmentInvitation(db.Model):
     __tablename__ = 'ras_enrolment_invitations'
     id = db.Column(db.Integer, primary_key=True)
     respondent_id = db.Column(db.INTEGER)
+    business_id = db.Column(db.INTEGER)
+    survey_id = db.Column(TEXT)
     target_email = db.Column(TEXT)
     verification_token = db.Column(UUID)
     sms_verification_token = db.Column(db.INTEGER)
     effective_from = db.Column(DateTime, default=datetime.datetime.utcnow)
-    effective_to = db.Column(DateTime)
+    effective_to = db.Column(DateTime, default=datetime.datetime.utcnow()+datetime.timedelta(days=2))
     status = db.Column(TEXT)
     created_on = db.Column(DateTime, default=datetime.datetime.utcnow)
 
-    def __init__(self, respondent_id, target_email, verification_token, sms_verification_token,
-                 effective_from, effective_to, status, id=None):
+    def __init__(self, respondent_id, business_id, survey_id, target_email,
+                 verification_token, sms_verification_token, status, id=None):
         self.id = id
         self.respondent_id = respondent_id
+        self.business_id = business_id
+        self.survey_id = survey_id
         self.target_email = target_email
         self.verification_token = verification_token
         self.sms_verification_token = sms_verification_token
-        self.effective_from = effective_from
-        self.effective_to = effective_to
         self.status = status

@@ -137,7 +137,8 @@ CREATE TABLE ras_party.ras_business_associations
    FOREIGN KEY (respondent_id)
      REFERENCES ras_party.ras_respondents(id)
 ,CONSTRAINT valid_status
-   CHECK (status IN ('ACTIVE'
+   CHECK (status IN ('PENDING'
+                    ,'ACTIVE'
                     ,'INACTIVE'
                     ,'SUSPENDED'
                     ,'ENDED'))
@@ -242,6 +243,8 @@ DROP TABLE IF EXISTS ras_party.ras_enrolment_invitations CASCADE;
 CREATE TABLE ras_party.ras_enrolment_invitations
 (id                       BIGSERIAL                 NOT NULL
 ,respondent_id            BIGINT                    NOT NULL
+,business_id              BIGINT                    NOT NULL
+,survey_id                CHARACTER VARYING (255)   NOT NULL
 ,target_email             CHARACTER VARYING (255)   NOT NULL
 ,verification_token       UUID                      NOT NULL
 ,sms_verification_token   INTEGER                   NOT NULL
@@ -254,6 +257,9 @@ CREATE TABLE ras_party.ras_enrolment_invitations
 ,CONSTRAINT ras_eni_res_fk
    FOREIGN KEY (respondent_id)
      REFERENCES ras_party.ras_respondents(id)
+,CONSTRAINT ras_eni_bus_fk
+   FOREIGN KEY (business_id)
+     REFERENCES ras_party.ras_businesses(id)
 ,CONSTRAINT valid_status
    CHECK (status IN ('ACTIVE'
                     ,'REDEEMED'
@@ -264,6 +270,16 @@ CREATE TABLE ras_party.ras_enrolment_invitations
 -- Index: ras_eni_res_fk_idx - FK Index
 --
 CREATE INDEX ras_eni_res_fk_idx ON ras_party.ras_enrolment_invitations(respondent_id);
+
+--
+-- Index: ras_eni_bus_fk_idx - FK Index
+--
+CREATE INDEX ras_eni_bus_fk_idx ON ras_party.ras_enrolment_invitations(business_id);
+
+--
+-- Index: ras_enc_survey_idx
+--
+CREATE INDEX ras_enc_survey_idx ON ras_party.ras_enrolment_invitations(survey_id);
 
 --
 -- Index: ras_enc_ver_tok_idx
@@ -280,13 +296,15 @@ CREATE INDEX ras_enc_sms_tok_idx ON ras_party.ras_enrolment_invitations(sms_veri
 -- some initial data
 --
 INSERT INTO ras_party.ras_businesses
-  (business_ref,name,address_line_1,city,postcode,telephone
+  (business_ref,party_id,name,address_line_1,city,postcode,telephone
   ,employee_count,fulltime_count,legal_status,sic_2003,sic_2007,turnover)
 VALUES
-  ('11111111111','AAA Ltd','1 New St','Newtown','AA1 1AA','+44 1111 111111'
+  ('11111111111','urn:ons.gov.uk:id:business:00000000001'
+  ,'AAA Ltd','1 New St','Newtown','AA1 1AA','+44 1111 111111'
   ,100,100,'PRIVATE_LIMITED_COMPANY','1111','1111',100000)
  ,
-  ('22222222222','BBB Ltd','2 New St','Newtown','BB1 2BB','+44 2222 222222'
+  ('22222222222','urn:ons.gov.uk:id:business:00000000002'
+  ,'BBB Ltd','2 New St','Newtown','BB1 2BB','+44 2222 222222'
   ,200,200,'PRIVATE_LIMITED_COMPANY','2222','2222',200000);
 
 INSERT INTO ras_party.ras_respondents
@@ -355,5 +373,37 @@ VALUES
   ,'urn:uk.gov.ons:id:survey:BRES'
   ,'2222-2222-2222-2222'
   ,'ACTIVE');
+
+INSERT INTO ras_party.ras_enrolment_invitations
+  (respondent_id ,business_id, survey_id, target_email
+  ,verification_token, sms_verification_token
+  ,status ,effective_from, effective_to)
+VALUES
+  ((SELECT id
+    FROM   ras_party.ras_respondents
+    WHERE  party_id = 'urn:uk.gov.ons:id:respondent:1111')
+  ,(SELECT id
+    FROM   ras_party.ras_businesses
+    WHERE  business_ref = '11111111111')
+  ,'urn:uk.gov.ons:id:survey:BRES'
+  ,'a.adams@nowhere.com'
+  ,'a1aaaa11-1a1a-1aa1-aa1a-1aa1aa111a11'
+  ,'111111111'
+  ,'ACTIVE'
+  ,NOW()
+  ,NOW() + INTERVAL '2 days')
+ ,((SELECT id
+    FROM   ras_party.ras_respondents
+    WHERE  party_id = 'urn:uk.gov.ons:id:respondent:2222')
+  ,(SELECT id
+    FROM   ras_party.ras_businesses
+    WHERE  business_ref = '22222222222')
+  ,'urn:uk.gov.ons:id:survey:BRES'
+  ,'b.brown@nowhere.com'
+  ,'b2bbbb22-2b2b-2bb2-bb2d-2bb2bb222b22'
+  ,'222222222'
+  ,'ACTIVE'
+  ,NOW()
+  ,NOW() + INTERVAL '2 days');
 
 COMMIT;

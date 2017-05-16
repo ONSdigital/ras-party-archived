@@ -38,7 +38,7 @@ class ComponentTestCase(unittest.TestCase):
 
        self.assertEquals(expected_response, json.loads(response.data))
 
-    def set_set_enrolment_code_as_redeemed(self):
+    def test_set_enrolment_code_as_redeemed(self):
 
         response = self.app.put('/enrolment-codes/"1111-1111-1111-1111"', headers=self.headers)
 
@@ -51,16 +51,16 @@ class ComponentTestCase(unittest.TestCase):
        expected_response = [{"businessRef": "11111111111",
                              "businessId": "urn:ons.gov.uk:id:business:00000000001",
                              "businessName": "AAA Ltd",
-                             "businessTradingName": "",
-                             "businessEnterpriseName": "",
-                             "businessContactName": "",
+                             "businessTradingName": None,
+                             "businessEnterpriseName": None,
+                             "businessContactName": None,
                              "addressLine1": "1 New St",
-                             "addressLine2": "",
-                             "addressLine3": "",
+                             "addressLine2": None,
+                             "addressLine3": None,
                              "city": "Newtown",
                              "postcode": "AA1 1AA",
                              "telephone": "+44 1111 111111",
-                             "facsimile": "",
+                             "facsimile": None,
                              "employeeCount": 100,
                              "fulltimeCount": 100,
                              "legaStatus": "PRIVATE_LIMITED_COMPANY",
@@ -77,16 +77,16 @@ class ComponentTestCase(unittest.TestCase):
        expected_response = [{"businessRef": "11111111111",
                              "businessId": "urn:ons.gov.uk:id:business:00000000001",
                              "businessName": "AAA Ltd",
-                             "businessTradingName": "",
-                             "businessEnterpriseName": "",
-                             "businessContactName": "",
+                             "businessTradingName": None,
+                             "businessEnterpriseName": None,
+                             "businessContactName": None,
                              "addressLine1": "1 New St",
-                             "addressLine2": "",
-                             "addressLine3": "",
+                             "addressLine2": None,
+                             "addressLine3": None,
                              "city": "Newtown",
                              "postcode": "AA1 1AA",
                              "telephone": "+44 1111 111111",
-                             "facsimile": "",
+                             "facsimile": None,
                              "employeeCount": 100,
                              "fulltimeCount": 100,
                              "legaStatus": "PRIVATE_LIMITED_COMPANY",
@@ -163,7 +163,7 @@ class ComponentTestCase(unittest.TestCase):
 
         self.assertTrue(response.status_code, 200)
 
-    def set_verification_token_as_redeemed(self):
+    def test_set_verification_token_as_redeemed(self):
 
         response = self.app.put('/verification-tokens/a1aaaa11-1a1a-1aa1-aa1a-1aa1aa111a11', headers=self.headers)
 

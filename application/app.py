@@ -2,17 +2,16 @@
 The main module which starts the server
 """
 
-import ast
 import hashlib
 import os
 import sys
 import uuid
-import logging
+import settings
 from logging import Formatter
 from logging.handlers import RotatingFileHandler
+import logging
 
-
-from flask import request, Response, send_from_directory, make_response, jsonify, Flask
+from flask import request, Response, make_response, jsonify, Flask
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import exc
@@ -21,13 +20,13 @@ from jwt import decode
 from json import JSONEncoder
 import phonenumbers
 from phonenumbers.phonenumberutil import NumberParseException
-from config import PartyService
 from random import randint
 
 # Enable cross-origin requests
 app = Flask(__name__)
 CORS(app)
 
+app.config['SQLALCHEMY_DATABASE_URI'] = settings.SQLALCHEMY_DATABASE_URI
 
 #
 # http://docs.sqlalchemy.org/en/latest/core/type_basics.html
@@ -153,7 +152,7 @@ def validate_phone_number(telephone):
 
 def validate_status_code(status):
 
-    if status in PartyService.STATUS_CODES:
+    if status in settings.STATUS_CODES:
         return True
     else:
         return False
@@ -161,7 +160,7 @@ def validate_status_code(status):
 
 def validate_legal_status_code(legalStatus):
 
-    if legalStatus in PartyService.LEGAL_STATUS_CODES:
+    if legalStatus in settings.LEGAL_STATUS_CODES:
         return True
     else:
         return False
@@ -211,6 +210,14 @@ def validate_scope(jwt_token, scope_type):
     except KeyError:
         app.logger.warning('JWT scope could not be validated.')
         return False
+
+
+def is_valid_json(required_keys, json):
+    for key in required_keys:
+        if key in json:
+            return True
+        else:
+            return False
 
 
 @app.route('/enrolment-codes/<string:enrolment_code>', methods=['GET'])
@@ -623,17 +630,9 @@ def create_businesses():
         party_respondent.append(request.json)
         response.headers["location"] = "/respondents/"
 
-        # Check that we have all the correct attributes in our json object.
-        if check_json("businessRef", json) \
-        and check_json("name", json) \
-        and check_json("addressLine1", json) \
-        and check_json("city", json) \
-        and check_json("postcode", json):
-            json_ok = True
-        else:
-            json_ok = False
+        required_keys = ["businessRef", "name", "addressLine1", "city", "postcode"]
 
-        if not json_ok:
+        if is_valid_json(required_keys, json):
             app.logger.warning("""Party Service POST did not contain correct mandatory
                                parameters in it's JSON payload: {}""".format(str(json)))
             res = Response(response="invalid input, object invalid", status=404, mimetype="text/html")

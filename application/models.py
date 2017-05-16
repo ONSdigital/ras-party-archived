@@ -13,6 +13,7 @@ from app import db
 class Respondent(db.Model):
 
     __tablename__ = 'ras_respondents'
+    __table_args__ = {"schema": "ras_party"}
     id = db.Column(db.Integer, primary_key=True)
     party_id = db.Column(TEXT)
     status = db.Column(TEXT)
@@ -35,6 +36,7 @@ class Respondent(db.Model):
 class BusinessAssociation(db.Model):
 
     __tablename__ = 'ras_business_associations'
+    __table_args__ = {"schema": "ras_party"}
     id = db.Column(db.Integer, primary_key=True)
     business_id = db.Column(db.INTEGER)
     respondent_id = db.Column(db.INTEGER)
@@ -55,6 +57,7 @@ class BusinessAssociation(db.Model):
 class Enrolment(db.Model):
 
     __tablename__ = 'ras_enrolments'
+    __table_args__ = {"schema": "ras_party"}
     id = db.Column(db.Integer, primary_key=True)
     business_association_id = db.Column(db.INTEGER)
     survey_id = db.Column(TEXT)
@@ -71,6 +74,7 @@ class Enrolment(db.Model):
 class Business(db.Model):
 
     __tablename__ = 'ras_businesses'
+    __table_args__ = {"schema": "ras_party"}
     id = db.Column(db.Integer, primary_key=True)
     business_ref = db.Column(TEXT)
     party_id = db.Column(TEXT)
@@ -122,6 +126,7 @@ class Business(db.Model):
 class EnrolmentCode(db.Model):
 
     __tablename__ = 'ras_enrolment_codes'
+    __table_args__ = {"schema": "ras_party"}
     id = db.Column(db.Integer, primary_key=True)
     respondent_id = db.Column(db.INTEGER)
     business_id = db.Column(db.INTEGER)
@@ -142,6 +147,7 @@ class EnrolmentCode(db.Model):
 class EnrolmentInvitation(db.Model):
 
     __tablename__ = 'ras_enrolment_invitations'
+    __table_args__ = {"schema": "ras_party"}
     id = db.Column(db.Integer, primary_key=True)
     respondent_id = db.Column(db.INTEGER)
     business_id = db.Column(db.INTEGER)

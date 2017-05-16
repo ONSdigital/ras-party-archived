@@ -6,3 +6,5 @@ phonenumbers==8.4.1
 python-jose==1.2.0
 requests==2.11.1
 psycopg2==2.6.1
+pytest-cov==2.4.0
+flake8==2.5.4

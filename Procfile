@@ -1,1 +1,1 @@
-web: python ras-party/app.py
+web: python application/app.py

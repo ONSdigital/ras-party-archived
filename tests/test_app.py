@@ -4,7 +4,7 @@ Module for python unit tests
 import json
 import unittest
 
-from app import app
+from application.app import app
 
 
 class ComponentTestCase(unittest.TestCase):
@@ -168,6 +168,3 @@ class ComponentTestCase(unittest.TestCase):
         response = self.app.put('/verification-tokens/a1aaaa11-1a1a-1aa1-aa1a-1aa1aa111a11', headers=self.headers)
 
         self.assertTrue(response.status_code, 200)
-
-if __name__ == '__main__':
-    unittest.main()

@@ -244,8 +244,11 @@ def get_enrolment_code(enrolment_code):
                           .filter(EnrolmentCode.status == 'ACTIVE')
                           .filter(EnrolmentCode.iac == enrolment_code))
 
-        object_list = [[enc.survey_id,
-                        bus.name]
+        object_list = [{'surveyId': enc.survey_id,
+                        'businessId': bus.party_id,
+                        'businessRef': bus.business_ref,
+                        'businessName': bus.name,
+                        'IACStatus': enc.status}
                        for enc, bus in enrolment_codes]
 
     except exc.OperationalError:
@@ -362,11 +365,25 @@ def get_business_by_ref(business_ref):
 
         app.logger.debug("Querying DB with business_ref:{}".format(business_ref))
 
-        object_list = [[rec.business_ref, rec.party_id, rec.name, rec.trading_name,
-                        rec.enterprise_name, rec.contact_name, rec.address_line_1,
-                        rec.address_line_2, rec.address_line_3, rec.city, rec.postcode,
-                        rec.telephone, rec.employee_count, rec.facsimile, rec.fulltime_count,
-                        rec.legal_status, rec.sic_2003, rec.sic_2007, rec.turnover]
+        object_list = [{'businessRef': rec.business_ref,
+                        'businessId': rec.party_id,
+                        'businessName': rec.name,
+                        'businessTradingName': rec.trading_name,
+                        'businessEnterpriseName': rec.enterprise_name,
+                        'businessContactName': rec.contact_name,
+                        'addressLine1': rec.address_line_1,
+                        'addressLine2': rec.address_line_2,
+                        'addressLine3': rec.address_line_3,
+                        'city': rec.city,
+                        'postcode': rec.postcode,
+                        'telephone': rec.telephone,
+                        'facsimile': rec.facsimile,
+                        'employeeCount': rec.employee_count,
+                        'fulltimeCount': rec.fulltime_count,
+                        'legaStatus': rec.legal_status,
+                        'sic2003': rec.sic_2003,
+                        'sic2007': rec.sic_2007,
+                        'turnover': rec.turnover}
                        for rec in
                        Business.query
                        .filter(Business.business_ref == business_ref)]
@@ -415,11 +432,25 @@ def get_business_by_id(business_id):
 
         app.logger.debug("Querying DB with business_id:{}".format(business_id))
 
-        object_list = [[rec.business_ref, rec.party_id, rec.name, rec.trading_name,
-                        rec.enterprise_name, rec.contact_name, rec.address_line_1,
-                        rec.address_line_2, rec.address_line_3, rec.city, rec.postcode,
-                        rec.telephone, rec.employee_count, rec.facsimile, rec.fulltime_count,
-                        rec.legal_status, rec.sic_2003, rec.sic_2007, rec.turnover]
+        object_list = [{'businessRef': rec.business_ref,
+                        'businessId': rec.party_id,
+                        'businessName': rec.name,
+                        'businessTradingName': rec.trading_name,
+                        'businessEnterpriseName': rec.enterprise_name,
+                        'businessContactName': rec.contact_name,
+                        'addressLine1': rec.address_line_1,
+                        'addressLine2': rec.address_line_2,
+                        'addressLine3': rec.address_line_3,
+                        'city': rec.city,
+                        'postcode': rec.postcode,
+                        'telephone': rec.telephone,
+                        'facsimile': rec.facsimile,
+                        'employeeCount': rec.employee_count,
+                        'fulltimeCount': rec.fulltime_count,
+                        'legaStatus': rec.legal_status,
+                        'sic2003': rec.sic_2003,
+                        'sic2007': rec.sic_2007,
+                        'turnover': rec.turnover}
                        for rec in
                        Business.query
                        .filter(Business.party_id == business_id)]
@@ -459,9 +490,9 @@ def get_business_associations_by_business_id(business_id):
         res = Response(response="Valid token/scope is required to access this Microservice Resource", status=400, mimetype="text/html")
         return res
 
-    if not validate_uri(business_id, 'business'):
-        res = Response(response="Invalid URI", status=404, mimetype="text/html")
-        return res
+    # if not validate_uri(business_id, 'business'):
+    #     res = Response(response="Invalid URI", status=404, mimetype="text/html")
+    #     return res
 
     try:
         app.logger.debug("Querying DB in get_business_associations_by_business_id")
@@ -474,10 +505,14 @@ def get_business_associations_by_business_id(business_id):
                                 .filter(BusinessAssociation.id == Enrolment.business_association_id)
                                 .filter(Business.party_id == business_id))
 
-        object_list = [[bus.business_ref, bus.party_id, bus.name,
-                        bua.status,
-                        res.email_address, res.first_name, res.last_name,
-                        enr.survey_id]
+        object_list = [{'businessRef': bus.business_ref,
+                        'businessId': bus.party_id,
+                        'businessName': bus.name,
+                        'businessStatus': bua.status,
+                        'respondentEmailAddress': res.email_address,
+                        'respondentFirstName': res.first_name,
+                        'respondentLastName': res.last_name,
+                        'surveyId': enr.survey_id}
                        for bus, bua, res, enr in business_associations]
 
     except exc.OperationalError:
@@ -515,9 +550,9 @@ def get_business_associations_by_respondent_id(respondent_id):
         res = Response(response="Valid token/scope is required to access this Microservice Resource", status=400, mimetype="text/html")
         return res
 
-    if not validate_uri(respondent_id, 'respondent'):
-        res = Response(response="Invalid URI", status=404, mimetype="text/html")
-        return res
+    # if not validate_uri(respondent_id, 'respondent'):
+    #     res = Response(response="Invalid URI", status=404, mimetype="text/html")
+    #     return res
 
     try:
         app.logger.debug("Querying DB in get_business_associations_by_respondent_id")
@@ -530,10 +565,14 @@ def get_business_associations_by_respondent_id(respondent_id):
                                 .filter(BusinessAssociation.id == Enrolment.business_association_id)
                                 .filter(Respondent.party_id == respondent_id))
 
-        object_list = [[bus.business_ref, bus.party_id, bus.name,
-                        bua.status,
-                        res.email_address, res.first_name, res.last_name,
-                        enr.survey_id]
+        object_list = [{'businessRef': bus.business_ref,
+                        'businessId': bus.party_id,
+                        'businessName': bus.name,
+                        'businessStatus': bua.status,
+                        'respondentEmailAddress': res.email_address,
+                        'respondentFirstName': res.first_name,
+                        'respondentLastName': res.last_name,
+                        'surveyId': enr.survey_id}
                        for bus, bua, res, enr in business_associations]
 
     except exc.OperationalError:

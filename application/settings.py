@@ -16,25 +16,10 @@ STATUS_CODES = ['ACTIVE', 'CREATED', 'SUSPENDED']
 ENROLMENT_STATUS_CODES = ['ACTIVE', 'REDEEMED', 'REVOKED']
 
 LEGAL_STATUS_CODES = ['COMMUNITY_INTEREST_COMPANY', 'CHARITABLE_INCORPORATED_ORGANISATION',
-                         'INDUSTRIAL_AND_PROVIDENT_SOCIETY', 'GENERAL_PARTNERSHIP',
-                         'LIMITED_LIABILITY_PARTNERSHIP', 'LIMITED_PARTNERSHIP',
-                         'PRIVATE_LIMITED_COMPANY', 'PUBLIC_LIMITED_COMPANY',
-                         'UNLIMITED_COMPANY', 'SOLE_PROPRIETORSHIP']
-#OAuthConfig
-    # """
-    # This class is used to configure OAuth2 parameters for the microservice.
-    # This is temporary until an admin config partyser
-    # is added to allow manual config of the microservice
-    # """
-    # APP_ID = "399360140422360"  # This is an APP ID registered with the Facebook OAuth2
-    #
-    # # App secret for a test registered Facebook OAuth2
-    # APP_SECRET = "8daae4110e491db2c5067e5c89add2dd"
-    #
-    # DISPLAY_NAME = "NoisyAtom"  # This is a test name registered with Facebook OAuth2
-    # REDIRECT_ENDPOINT = ["http://104.236.14.123:8002/auth/callback",
-    #                      "http://104.236.14.123:8002/auth/callback.html"]
-    #
+                      'INDUSTRIAL_AND_PROVIDENT_SOCIETY', 'GENERAL_PARTNERSHIP',
+                      'LIMITED_LIABILITY_PARTNERSHIP', 'LIMITED_PARTNERSHIP',
+                      'PRIVATE_LIMITED_COMPANY', 'PUBLIC_LIMITED_COMPANY',
+                      'UNLIMITED_COMPANY', 'SOLE_PROPRIETORSHIP']
 
 AUTHORIZATION_ENDPOINT = "https://www.facebook.com/dialog/oauth"  # Facebook Auth endpoint
 TOKEN_ENDPOINT = "https://graph.facebook.com/oauth/access_token"  # Facebook token endpoint
@@ -45,3 +30,8 @@ RAS_PARTY_CLIENT_SECRET = os.environ.get('RAS_PARTY_CLIENT_SECRET', 'password')
 ONS_AUTHORIZATION_ENDPOINT = os.environ.get('ONS_AUTHORIZATION_ENDPOINT', '/web/authorize/')
 ONS_TOKEN_ENDPOINT = os.environ.get('ONS_TOKEN_ENDPOINT', '/api/v1/tokens/')
 ONS_ADMIN_ENDPOINT = os.environ.get('ONS_ADMIN_ENDPOINT', '/api/account/create')
+RAS_DB_ERROR = "Error in the Party DB"
+RAS_LOG_LEVEL = "DEBUG"
+RAS_ENROLEMENT_CODE_NOT_FOUND = "Enrolment code not found"
+RAS_BUSINESS_NOT_FOUND = "Business not found"
+RAS_BUSINESS_ASSOCIATION_NOT_FOUND = "Business association not found"

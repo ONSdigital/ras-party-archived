@@ -1,5 +1,7 @@
 language: python
 
+env:
+  - secure: "nV7qi+g/PtIgx07tqfcKnBLghrBwOUSiMSrLxE4yCc7HA35lmzhi8jqeqbODA2WmGjyq6foNxwOudYlwXZu0HHjVtw0nr/kVzCOtLyh8Hhz3u4Z7FEa0WgGS6yX6I1PqyIkT76grEqPJzNtW7nE9mgGMOe95kycNZO+vFOnUDYKdENBrSJkZuODt/BYG2o61IUz+RThgx87XwgNUg3t9u4yBx2awE44Y1qAp+ucYXWqtqJso38yqCk+HAEHgQCxzcA32Sw+SjxbaxfmLrO/q0hM/jWyIi9cNwiDQDPJVHnWqxSrvTTNsO8LGqdnwsW8d74gJ9ifv5nPM2b5BI/chjpGtwTbjtInbjCkaKsH/ItyFsUlUH/SKgZCsJmkazgLqPI9Jjp8eJPj7JB86rPbNjo+ZXBU9ObjlfRpM/mRIzKP8t2RtPGr/RlcsuZSJg/nN9EaAhPuS95hTdpsY5VHVLDRUuUn5V+DyknAWk2vxdciLNAWSvPssImJOFl9C/TI6BBsD73thZiNCiOuxXHmNdjYJL9yjcS6lgbLMO9f6M5jJPt3JqxlcHGgGzH0Xx4YuIZF3QNhd9ElH2Gh+qxh9V9KbhXkc/fMnus2iMfGMW/Xaj8epT99/YErmAvgG5Av1HEWXD1YZgDmuZxxvBxVSvaldkDeIfn2DBVPiFE+6IsE="
 python:
   - "2.7"
 
@@ -9,6 +11,9 @@ install:
 
 script:
   - ./scripts/run_tests.sh
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
 
 dist: trusty
 

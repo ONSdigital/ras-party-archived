@@ -5,9 +5,8 @@ This module contains the data model for the collection instrument
 import datetime
 
 from sqlalchemy import DateTime
-from sqlalchemy.dialects.postgresql import TEXT, JSON, UUID
-
-from app import db
+from sqlalchemy.dialects.postgresql import TEXT, UUID
+from database import db
 
 
 class Respondent(db.Model):
@@ -51,7 +50,7 @@ class BusinessAssociation(db.Model):
         self.respondent_id = respondent_id
         self.status = status
         self.effective_from = effective_from
-        self.effective_to= effective_to
+        self.effective_to = effective_to
 
 
 class Enrolment(db.Model):
@@ -156,7 +155,7 @@ class EnrolmentInvitation(db.Model):
     verification_token = db.Column(UUID)
     sms_verification_token = db.Column(db.INTEGER)
     effective_from = db.Column(DateTime, default=datetime.datetime.utcnow)
-    effective_to = db.Column(DateTime, default=datetime.datetime.utcnow()+datetime.timedelta(days=2))
+    effective_to = db.Column(DateTime, default=datetime.datetime.utcnow() + datetime.timedelta(days=2))
     status = db.Column(TEXT)
     created_on = db.Column(DateTime, default=datetime.datetime.utcnow)
 

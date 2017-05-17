@@ -38,11 +38,23 @@ class ComponentTestCase(unittest.TestCase):
 
        self.assertEquals(expected_response, json.loads(response.data))
 
+    def test_get_enrolment_code_not_found(self):
+
+        response = self.app.get('/enrolment-codes/XXXX-XXXX-XXXX-XXXX', headers=self.headers)
+
+        self.assertTrue(response.status_code, 404)
+
     def test_set_enrolment_code_as_redeemed(self):
 
         response = self.app.put('/enrolment-codes/"1111-1111-1111-1111"', headers=self.headers)
 
         self.assertTrue(response.status_code, 200)
+
+    def test_set_enrolment_code_as_redeemed_not_found(self):
+
+        response = self.app.put('/enrolment-codes/"XXXX-XXXX-XXXX-XXXX"', headers=self.headers)
+
+        self.assertTrue(response.status_code, 404)
 
     def test_get_business_by_ref(self):
 
@@ -70,6 +82,12 @@ class ComponentTestCase(unittest.TestCase):
 
        self.assertEquals(expected_response, json.loads(response.data))
 
+    def test_get_business_by_ref_not_found(self):
+
+        response = self.app.get('/businesses/ref/XXXXXXXXXXX', headers=self.headers)
+
+        self.assertTrue(response.status_code, 404)
+
     def test_get_business_by_id(self):
 
        response = self.app.get('/businesses/id/urn:ons.gov.uk:id:business:00000000001', headers=self.headers)
@@ -96,6 +114,12 @@ class ComponentTestCase(unittest.TestCase):
 
        self.assertEquals(expected_response, json.loads(response.data))
 
+    def test_get_business_by_id_not_found(self):
+
+       response = self.app.get('/businesses/id/urn:ons.gov.uk:id:business:XXXXXXXXXXX', headers=self.headers)
+
+       self.assertTrue(response.status_code, 404)
+
     def test_get_business_associations_by_business_id(self):
 
        response = self.app.get('/businesses/id/urn:ons.gov.uk:id:business:00000000001/business-associations', headers=self.headers)
@@ -111,7 +135,14 @@ class ComponentTestCase(unittest.TestCase):
 
        self.assertEquals(expected_response, json.loads(response.data))
 
+    def test_get_business_associations_by_business_id_not_found(self):
+
+        response = self.app.get('/businesses/id/urn:ons.gov.uk:id:business:XXXXXXXXXXX/business-associations', headers=self.headers)
+
+        self.assertTrue(response.status_code, 404)
+
     def test_get_business_associations_by_respondent_id(self):
+
         response = self.app.get('/respondents/id/urn:uk.gov.ons:id:respondent:1111/business-associations', headers=self.headers)
 
         expected_response = [{"businessRef": "11111111111",
@@ -124,6 +155,12 @@ class ComponentTestCase(unittest.TestCase):
                               "surveyId": "urn:uk.gov.ons:id:survey:BRES"}]
 
         self.assertEquals(expected_response, json.loads(response.data))
+
+    def test_get_business_associations_by_respondent_id_not_found(self):
+
+        response = self.app.get('/respondents/id/urn:uk.gov.ons:id:respondent:XXXX/business-associations', headers=self.headers)
+
+        self.assertTrue(response.status_code, 404)
 
     def test_create_businesses(self):
 
@@ -150,6 +187,31 @@ class ComponentTestCase(unittest.TestCase):
 
         self.assertTrue(response.status_code, 200)
 
+    def test_create_businesses_invalid_legal_status(self):
+
+        new_business = {"businessRef": "00000000001",
+                        "name": "XXX Ltd",
+                        "tradingName": "XXX Ltd",
+                        "enterpriseName": "XXX Ltd",
+                        "contactName": "Mr X",
+                        "addressLine1": "1 Exe St",
+                        "addressLine2": "Exwood",
+                        "addressLine3": "Exetown",
+                        "city": "Exeville",
+                        "postcode": "XX1 1XX",
+                        "telephone": "01234 567890",
+                        "employeeCount": "100",
+                        "facsimile": "01234 567891",
+                        "fulltimeCount": "90",
+                        "legalStatus": "XXX",
+                        "sic2003": "12345",
+                        "sic2007": "12345",
+                        "turnover": "1000000"}
+
+        response = self.app.post('/businesses/', data=new_business, headers=self.headers)
+
+        self.assertTrue(response.status_code, 404)
+
     def test_create_respondent(self):
 
         new_respondent = {"status":"CREATED",
@@ -163,8 +225,28 @@ class ComponentTestCase(unittest.TestCase):
 
         self.assertTrue(response.status_code, 200)
 
+    def test_create_respondent_invalid_status(self):
+
+        new_respondent = {"status":"XXX",
+                          "emailAddress":"testuser1@xxx.com",
+                          "firstName":"Test",
+                          "lastName":"User",
+                          "telephone": "01234 567890",
+                          "enrolmentCode": "1111-1111-1111-1111"}
+
+        response = self.app.post('/respondents/', data=new_respondent, headers=self.headers)
+
+        self.assertTrue(response.status_code, 404)
+
     def test_set_verification_token_as_redeemed(self):
 
         response = self.app.put('/verification-tokens/a1aaaa11-1a1a-1aa1-aa1a-1aa1aa111a11', headers=self.headers)
 
         self.assertTrue(response.status_code, 200)
+
+
+    def test_set_verification_token_as_redeemed_not_found(self):
+
+        response = self.app.put('/verification-tokens/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', headers=self.headers)
+
+        self.assertTrue(response.status_code, 404)

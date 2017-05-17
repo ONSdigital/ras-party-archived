@@ -52,52 +52,6 @@ db = SQLAlchemy(app)
 from models import *
 
 
-def validate_uri(uri, id_type):
-    """
-    This function verifies if a resource uri string is in the correct
-    format. it returns True or False. This function does not check
-    if the uri is present in the database or not.
-
-    :param uri: String
-    :param id_type: String
-    :return: Boolean
-    """
-
-    app.logger.info("validate_uri uri: {}, id_type: {}".format(uri, id_type))
-    app.logger.debug("Validating our URI: {}".format(uri))
-
-    urn_prefix = 'urn'
-    urn_ons_path = 'ons.gov.uk'
-    urn_id_str = 'id'
-    # urn_overall_digit_len = 13
-    # urn_first_digit_len = 3
-    # urn_second_digit_len = 3
-    # urn_third_digit_len = 5
-
-    try:
-
-        arr = uri.split(':')
-        sub_arr = arr[4].split('.')
-
-        if arr[0] == urn_prefix \
-                and arr[1] == urn_ons_path \
-                and arr[2] == urn_id_str \
-                and arr[3] == id_type:
-            #     and len(arr[4]) == urn_overall_digit_len \
-            #     and sub_arr[0].isdigit and len(sub_arr[0]) == urn_first_digit_len \
-            #     and sub_arr[1].isdigit and len(sub_arr[1]) == urn_second_digit_len \
-            #     and sub_arr[2].isdigit and len(sub_arr[2]) == urn_third_digit_len:
-            app.logger.debug("URI is well formed': {}".format(uri[0:14]))
-            return True
-        else:
-            app.logger.warning("URI is malformed: {}. It should be: {}".format(uri[0:14], urn_ons_path))
-            return False
-
-    except:
-        app.logger.warning("URI is malformed: {}. It should be: {}".format(uri[0:14], urn_ons_path))
-        return False
-
-
 def generate_urn(id_type):
 
     # TODO: write a proper URN generator
@@ -310,7 +264,7 @@ def set_enrolment_code_as_redeemed(enrolment_code, respondent_urn=None):
 
         if not existing_enrolment_code:
             app.logger.info("Enrolment code not found for set_enrolment_code_as_redeemed")
-            response = Response(response="Enrolment code not found", status=400, mimetype="text/html")
+            response = Response(response="Enrolment code not found", status=404, mimetype="text/html")
             return response
 
         respondents = (db.session.query(Respondent)
@@ -321,7 +275,7 @@ def set_enrolment_code_as_redeemed(enrolment_code, respondent_urn=None):
 
         if not respondent_id:
             app.logger.info("Respondent not found for set_enrolment_code_as_redeemed")
-            response = Response(response="Respondent not found", status=400, mimetype="text/html")
+            response = Response(response="Respondent not found", status=404, mimetype="text/html")
             return response
 
         new_enrolment_code = EnrolmentCode(id=existing_enrolment_code[0][0],
@@ -430,10 +384,6 @@ def get_business_by_id(business_id):
         res = Response(response="Valid token/scope is required to access this Microservice Resource", status=400, mimetype="text/html")
         return res
 
-    # if not validate_uri(business_id, 'business'):
-    #     res = Response(response="Invalid URI", status=404, mimetype="text/html")
-    #     return res
-
     try:
         app.logger.debug("Querying DB in get_business_by_id")
 
@@ -497,10 +447,6 @@ def get_business_associations_by_business_id(business_id):
         res = Response(response="Valid token/scope is required to access this Microservice Resource", status=400, mimetype="text/html")
         return res
 
-    # if not validate_uri(business_id, 'business'):
-    #     res = Response(response="Invalid URI", status=404, mimetype="text/html")
-    #     return res
-
     try:
         app.logger.debug("Querying DB in get_business_associations_by_business_id")
 
@@ -556,10 +502,6 @@ def get_business_associations_by_respondent_id(respondent_id):
     else:
         res = Response(response="Valid token/scope is required to access this Microservice Resource", status=400, mimetype="text/html")
         return res
-
-    # if not validate_uri(respondent_id, 'respondent'):
-    #     res = Response(response="Invalid URI", status=404, mimetype="text/html")
-    #     return res
 
     try:
         app.logger.debug("Querying DB in get_business_associations_by_respondent_id")
@@ -946,7 +888,7 @@ def set_verification_token_as_redeemed(verification_token):
 
         if not existing_enrolment_invitation:
             app.logger.info("Verication token not found for set_verification_token_as_redeemed")
-            response = Response(response="Verication token not found", status=400, mimetype="text/html")
+            response = Response(response="Verication token not found", status=404, mimetype="text/html")
             return response
 
         new_enrolment_invitation = EnrolmentInvitation(id=existing_enrolment_invitation[0][0],
@@ -976,7 +918,7 @@ def set_verification_token_as_redeemed(verification_token):
         if not existing_respondent:
             db.session.rollback()
             app.logger.info("Respondent not found for set_verification_token_as_redeemed")
-            response = Response(response="Respondent not found", status=400, mimetype="text/html")
+            response = Response(response="Respondent not found", status=404, mimetype="text/html")
             return response
 
         new_respondent = Respondent(id=existing_respondent[0][0],
@@ -1004,7 +946,7 @@ def set_verification_token_as_redeemed(verification_token):
         if not existing_business_association:
             db.session.rollback()
             app.logger.info("Business Association not found for set_verification_token_as_redeemed")
-            response = Response(response="Business Association not found", status=400, mimetype="text/html")
+            response = Response(response="Business Association not found", status=404, mimetype="text/html")
             return response
 
         new_business_association = BusinessAssociation(id=existing_business_association[0][0],
@@ -1030,7 +972,7 @@ def set_verification_token_as_redeemed(verification_token):
         if not existing_enrolment:
             db.session.rollback()
             app.logger.info("Enrolment not found for set_verification_token_as_redeemed")
-            response = Response(response="Enrolment not found", status=400, mimetype="text/html")
+            response = Response(response="Enrolment not found", status=404, mimetype="text/html")
             return response
 
         new_enrolment = Enrolment(id=existing_enrolment[0][0],

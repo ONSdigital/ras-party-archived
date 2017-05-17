@@ -3,7 +3,7 @@ This module hosts the config setup for our project
 """
 
 import os
-
+import connector
 
 # ENV VARIABLES BELOW, SET THESE ON YOUR TERMINAL
 # export APP_SETTINGS=config.Config
@@ -24,8 +24,7 @@ class Config(object):
     SECRET_KEY = 'this-really-needs-to-be-changed'
     dbname = "ras_party"
     #SQLALCHEMY_DATABASE_URI = "postgresql://" + dbname + ":password@localhost:5431/postgres"
-    SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI', 'postgresql://ras_party:password@localhost:5431/postgres')
-
+    SQLALCHEMY_DATABASE_URI = connector.getDatabaseUri()
 
 class ProductionConfig(Config):
     """

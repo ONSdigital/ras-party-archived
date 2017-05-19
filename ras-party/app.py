@@ -510,7 +510,7 @@ def get_survey_id(survey_id):
     if request.headers.get('authorization'):
         jwt_token = request.headers.get('authorization')
         if not validate_scope(jwt_token, 'ci.read'):
-            res = Response(response="Invalid token/scope to access this Microservice Resource", status=400, mimetype="text/html")
+            res = Response(response="MNP Invalid token/scope to access this Microservice Resource", status=400, mimetype="text/html")
             return res
     else:
         res = Response(response="Valid token/scope is required to access this Microservice Resource", status=400, mimetype="text/html")

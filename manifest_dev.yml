@@ -2,6 +2,9 @@
 applications:
 - name: ras-party
   buildpack: https://github.com/cloudfoundry/python-buildpack.git
+  memory: 256M
+  services:
+  - instance_ABC
   env:
     DEBUG: "False"
     TESTING: "False"

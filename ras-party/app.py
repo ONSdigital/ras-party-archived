@@ -515,27 +515,27 @@ def get_survey_id(survey_id):
             # search with the survey urn and the search string
             app.logger.debug("Querying DB with survey urn and search string: {} {}".format(survey_id, search_string))
             object_list = [rec.content for rec in
-                           PartyService.query
-                           .filter(PartyService.survey_urn == survey_id)
-                           .filter(PartyService.content.op('@>')(search_string)).all()]
+                           Respondent.query
+                           .filter(Respondent.id == survey_id)
+                           .filter(Respondent.content.op('@>')(search_string)).all()]
         else:
             # search with just the survey urn
             app.logger.debug("Querying DB with survey urn:{}".format(survey_id))
             object_list = [rec.content for rec in
-                           PartyService.query
-                           .filter(PartyService.survey_urn == survey_id)]
+                           Respondent.query
+                           .filter(Respondent.id == survey_id)]
 
     except exc.OperationalError:
         app.logger.error("There has been an error in our DB. Exception is: {}".format(sys.exc_info()[0]))
-        res = Response(response="""Error in the Party Service DB,
+        res = Response(response="""Error in the Party DB,
                                    it looks like there is no data presently or the DB is not available.
                                    Please contact a member of ONS staff.""",
                        status=500, mimetype="text/html")
         return res
 
     if not object_list:
-        app.logger.info("Object list is empty for get_survey_id")
-        res = Response(response="Party Service(s) not found", status=404, mimetype="text/html")
+        app.logger.info("Object list is empty for id")
+        res = Response(response="Party not found", status=404, mimetype="text/html")
         return res
 
     jobject_list = JSONEncoder().encode(object_list)

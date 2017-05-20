@@ -502,9 +502,9 @@ def get_survey_id(survey_id):
     else:
         res = Response(response="Valid token/scope is required to access this Microservice Resource", status=400, mimetype="text/html")
         return res
-    if not validate_uri(survey_id, 'survey'):
-        res = Response(response="Invalid URI", status=404, mimetype="text/html")
-        return res
+    #if not validate_uri(survey_id, 'survey'):
+    #    res = Response(response="Invalid URI", status=404, mimetype="text/html")
+    #    return res
 
     try:
         app.logger.debug("Querying DB in get_survey_id")

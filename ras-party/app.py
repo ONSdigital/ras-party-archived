@@ -523,7 +523,7 @@ def get_by_party_id(party_id):
         app.logger.info("No party found with this id")
         return Response(response="No parties found", status=404, mimetype="text/html")
 
-    return Response(response=dumps(party, skipkeys=True, default=lambda o: o.__dict__), status=200, mimetype="collection+json")
+    return Response(response=dumps(party, skipkeys=True), status=200, mimetype="collection+json")
 
 if __name__ == '__main__':
     # Create a file handler to handle our logging

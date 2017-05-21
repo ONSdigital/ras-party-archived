@@ -516,14 +516,14 @@ def get_survey_id(survey_id):
             app.logger.debug("Querying DB with survey urn and search string: {} {}".format(survey_id, search_string))
             object_list = [rec.content for rec in
                            Respondent.query
-                           .filter(Respondent.id == survey_id)
+                           .filter(Respondent.party_id == survey_id)
                            .filter(Respondent.content.op('@>')(search_string)).all()]
         else:
             # search with just the survey urn
             app.logger.debug("Querying DB with survey urn:{}".format(survey_id))
             object_list = [rec.content for rec in
                            Respondent.query
-                           .filter(Respondent.id == survey_id)]
+                           .filter(Respondent.party_id == survey_id)]
 
     except exc.OperationalError:
         app.logger.error("There has been an error in our DB. Exception is: {}".format(sys.exc_info()[0]))

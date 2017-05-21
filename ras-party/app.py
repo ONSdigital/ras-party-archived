@@ -484,7 +484,7 @@ def create_respondent():
 # command to search on a survey urn and a classifier:
 # curl -X GET http://localhost:5052/partyservice/surveyid/urn:ons.gov.uk:id:survey:001.001.00001?classifier={"classifiers": {"INDUSTRY": "R", "LEGAL_STATUS": "F", "GEOGRAPHY": "B"}}
 
-@app.route('/respondent/<string:party_id>', methods=['GET'])
+@app.route('/respondents/id/<string:party_id>', methods=['GET'])
 def get_respondent_by_party_id(party_id):
     """
     Locate a Party by party_id

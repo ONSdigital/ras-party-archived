@@ -41,6 +41,8 @@ class Respondent(db.Model):
             'status': self.status,
             'email_address': self.email_address,
             'first_name': self.first_name,
-            'last_name': self.last_name}
+            'last_name': self.last_name,
+            'telephone': self.telephone,
+            'created_on': self.created_on.strftime("%Y-%m-%d %H:%M:%S")}
 
         return json.dumps(respondent, sort_keys=True)

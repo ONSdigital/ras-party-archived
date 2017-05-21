@@ -21,7 +21,6 @@ from jwt import decode
 from json import JSONEncoder
 
 import phonenumbers
-import jsonpickle
 
 from phonenumbers.phonenumberutil import NumberParseException
 from config import PartyService
@@ -523,7 +522,7 @@ def get_by_party_id(party_id):
         app.logger.info("No party found with this id")
         return Response(response="No parties found", status=404, mimetype="text/html")
 
-    return Response(response=jsonpickle.encode(party), status=200, mimetype="collection+json")
+    return Response(response=JSONEncoder().encode(party.__dict__), status=200, mimetype="collection+json")
 
 if __name__ == '__main__':
     # Create a file handler to handle our logging

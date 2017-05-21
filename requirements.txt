@@ -23,4 +23,3 @@ requests==2.11.1
 six==1.10.0
 SQLAlchemy==1.1.9
 Werkzeug==0.12.1
-jsonpickle==0.8.0

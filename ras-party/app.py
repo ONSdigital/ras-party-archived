@@ -483,15 +483,15 @@ def create_respondent():
 # command to search on a survey urn and a classifier:
 # curl -X GET http://localhost:5052/partyservice/surveyid/urn:ons.gov.uk:id:survey:001.001.00001?classifier={"classifiers": {"INDUSTRY": "R", "LEGAL_STATUS": "F", "GEOGRAPHY": "B"}}
 
-@app.route('/partyservice/surveyid/<string:survey_id>', methods=['GET'])
-def get_survey_id(survey_id):
+@app.route('/partyservice/id/<string:party_id>', methods=['GET'])
+def get_by_party_id(party_id):
     """
-    Locate a Party Service by survey id/urn and optionally a classifier.
-    :param survey_id: String, classifier: String
+    Locate a Party by party_id
+    :param party_id: String
     :return: Http Response
     """
 
-    app.logger.info("get_survey_id with survey_id: {}".format(survey_id))
+    app.logger.info("get_by_party_id with party_id: {}".format(party_id))
 
     # First check that we have a valid JWT token if we don't send a 400 error with authorisation failure
     if request.headers.get('authorization'):
@@ -502,45 +502,25 @@ def get_survey_id(survey_id):
     else:
         res = Response(response="Valid token/scope is required to access this Microservice Resource", status=400, mimetype="text/html")
         return res
-    #if not validate_uri(survey_id, 'survey'):
-    #    res = Response(response="Invalid URI", status=404, mimetype="text/html")
-    #    return res
-
     try:
-        app.logger.debug("Querying DB in get_survey_id")
+        app.logger.debug("Querying DB in get_party_id")
+        # search with just the survey urn
+        app.logger.debug("Querying DB with party_id:{}".format(party_id))
 
-        search_string = request.args.get('classifier')
-
-        if search_string is not None:
-            # search with the survey urn and the search string
-            app.logger.debug("Querying DB with survey urn and search string: {} {}".format(survey_id, search_string))
-            object_list = [rec.content for rec in
-                           Respondent.query
-                           .filter(Respondent.party_id == survey_id)
-                           .filter(Respondent.content.op('@>')(search_string)).all()]
-        else:
-            # search with just the survey urn
-            app.logger.debug("Querying DB with survey urn:{}".format(survey_id))
-            object_list = [rec.content for rec in
-                           Respondent.query
-                           .filter(Respondent.party_id == survey_id)]
+        party = Respondent.query.filter(Respondent.party_id == party_id).one()
 
     except exc.OperationalError:
         app.logger.error("There has been an error in our DB. Exception is: {}".format(sys.exc_info()[0]))
-        res = Response(response="""Error in the Party DB,
+        return Response(response="""Error in the Party DB,
                                    it looks like there is no data presently or the DB is not available.
                                    Please contact a member of ONS staff.""",
                        status=500, mimetype="text/html")
-        return res
 
-    if not object_list:
-        app.logger.info("Object list is empty for id")
-        res = Response(response="Party not found", status=404, mimetype="text/html")
-        return res
+    if not party:
+        app.logger.info("No party found with this id")
+        return Response(response="No parties found", status=404, mimetype="text/html")
 
-    jobject_list = JSONEncoder().encode(object_list)
-    res = Response(response=jobject_list, status=200, mimetype="collection+json")
-    return res
+    return Response(response=JSONEncoder().encode(party), status=200, mimetype="collection+json")
 
 
 if __name__ == '__main__':

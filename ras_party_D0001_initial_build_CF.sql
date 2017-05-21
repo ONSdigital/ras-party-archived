@@ -3,6 +3,18 @@
 
 -- R Ingram Initial build 05/04/17
 
+--
+-- Schema: ras_party, schema for ras_party microservice
+--
+DROP SCHEMA IF EXISTS ras_party CASCADE;
+CREATE SCHEMA ras_party;
+
+--
+-- User: ras_party, user for ras_party microservice
+--
+DROP USER IF EXISTS ras_party;
+CREATE USER ras_party WITH PASSWORD 'password'
+  SUPERUSER INHERIT CREATEDB CREATEROLE NOREPLICATION;
 
 --
 -- Table: ras_businesses [BUS]
@@ -271,10 +283,4 @@ VALUES
  ,((SELECT bua.id
     FROM   ras_business_associations bua
            JOIN ras_businesses bus
-           ON   bus.id = bua.business_id
-    WHERE  bus.business_ref = '22222222222')
-  ,'urn:uk.gov.ons:id:survey:BRES'
-  ,'ENABLED'
-  );
-
 COMMIT;

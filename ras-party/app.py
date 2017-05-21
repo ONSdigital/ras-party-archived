@@ -506,7 +506,7 @@ def get_respondent_by_party_id(party_id):
     try:
         app.logger.debug("Querying respondent with party_id:{}".format(party_id))
 
-        party = Respondent.query.filter(Respondent.party_id == party_id).one()
+        party = Respondent.query.filter(Respondent.party_id == party_id).one_or_none()
 
     except exc.OperationalError:
         app.logger.error("There has been an error in our DB. Exception is: {}".format(sys.exc_info()[0]))
@@ -517,9 +517,9 @@ def get_respondent_by_party_id(party_id):
 
     if not party:
         app.logger.info("No respondent found with this party_id")
-        return Response(response="No parties found", status=404, mimetype="text/html")
+        return Response(response="{}", status=404, mimetype="application/json")
 
-    return Response(response=party.toJson(), status=200, mimetype="collection+json")
+    return Response(response=party.toJson(), status=200, mimetype="application/json")
 
 if __name__ == '__main__':
     # Create a file handler to handle our logging

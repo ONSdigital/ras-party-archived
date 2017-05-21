@@ -484,29 +484,27 @@ def create_respondent():
 # command to search on a survey urn and a classifier:
 # curl -X GET http://localhost:5052/partyservice/surveyid/urn:ons.gov.uk:id:survey:001.001.00001?classifier={"classifiers": {"INDUSTRY": "R", "LEGAL_STATUS": "F", "GEOGRAPHY": "B"}}
 
-@app.route('/partyservice/id/<string:party_id>', methods=['GET'])
-def get_by_party_id(party_id):
+@app.route('/respondent/<string:party_id>', methods=['GET'])
+def get_respondent_by_party_id(party_id):
     """
     Locate a Party by party_id
     :param party_id: String
     :return: Http Response
     """
 
-    app.logger.info("get_by_party_id with party_id: {}".format(party_id))
+    app.logger.info("get_respondent_by_party_id with party_id: {}".format(party_id))
 
     # First check that we have a valid JWT token if we don't send a 400 error with authorisation failure
     if request.headers.get('authorization'):
         jwt_token = request.headers.get('authorization')
         if not validate_scope(jwt_token, 'ci.read'):
-            res = Response(response="MNP Invalid token/scope to access this Microservice Resource", status=400, mimetype="text/html")
+            res = Response(response="Invalid token/scope to access this Microservice Resource", status=400, mimetype="text/html")
             return res
     else:
         res = Response(response="Valid token/scope is required to access this Microservice Resource", status=400, mimetype="text/html")
         return res
     try:
-        app.logger.debug("Querying DB in get_party_id")
-        # search with just the survey urn
-        app.logger.debug("Querying DB with party_id:{}".format(party_id))
+        app.logger.debug("Querying respondent with party_id:{}".format(party_id))
 
         party = Respondent.query.filter(Respondent.party_id == party_id).one()
 
@@ -518,7 +516,7 @@ def get_by_party_id(party_id):
                        status=500, mimetype="text/html")
 
     if not party:
-        app.logger.info("No party found with this id")
+        app.logger.info("No respondent found with this party_id")
         return Response(response="No parties found", status=404, mimetype="text/html")
 
     return Response(response=party.toJson(), status=200, mimetype="collection+json")

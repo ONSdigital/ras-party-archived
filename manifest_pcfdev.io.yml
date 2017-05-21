@@ -1,0 +1,15 @@
+---
+applications:
+- name: ras-party
+  buildpack: https://github.com/cloudfoundry/python-buildpack.git
+  memory: 256M
+  services:
+  - db_ras_party
+  routes:
+  - route: ras-party
+  env:
+    DEBUG: "False"
+    TESTING: "False"
+    CSRF_ENABLED: "True"
+    SECRET_KEY: this-really-needs-to-be-changed
+    dbname: ras_party

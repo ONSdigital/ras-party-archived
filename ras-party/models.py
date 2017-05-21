@@ -6,7 +6,7 @@ import datetime
 
 from sqlalchemy import DateTime
 from sqlalchemy.dialects.postgresql import TEXT, JSON, UUID
-
+import json
 from app import db
 
 
@@ -33,3 +33,14 @@ class Respondent(db.Model):
         self.first_name = first_name
         self.last_name = last_name
         self.telephone = telephone
+
+    def toJson(self):
+
+        respondent = {'id': self.id,
+            'party_id': self.party_id,
+            'status': self.status,
+            'email_address': self.email_address,
+            'first_name': self.first_name,
+            'last_name': self.last_name}
+
+        return json.dumps(respondent, sort_keys=True)

@@ -524,7 +524,7 @@ def get_respondent_by_party_id(party_id):
 if __name__ == '__main__':
     # Create a file handler to handle our logging
     handler = RotatingFileHandler('application.log', maxBytes=10000, backupCount=1)
-    handler.setLevel(logging.INFO)
+    handler.setLevel(logging.DEBUG)
     app.logger.addHandler(handler)
     handler.setFormatter(Formatter('%(asctime)s %(levelname)s: %(message)s ' '[in %(pathname)s:%(lineno)d]'))
     # Initialise SqlAlchemy configuration here to avoid circular dependency

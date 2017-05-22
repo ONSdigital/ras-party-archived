@@ -4,19 +4,6 @@
 -- R Ingram Initial build 05/04/17
 
 --
--- Schema: ras_party, schema for ras_party microservice
---
-DROP SCHEMA IF EXISTS ras_party CASCADE;
-CREATE SCHEMA ras_party;
-
---
--- User: ras_party, user for ras_party microservice
---
-DROP USER IF EXISTS ras_party;
-CREATE USER ras_party WITH PASSWORD 'password'
-  SUPERUSER INHERIT CREATEDB CREATEROLE NOREPLICATION;
-
---
 -- Table: ras_businesses [BUS]
 --
 DROP TABLE IF EXISTS ras_businesses CASCADE;
